@@ -1,4 +1,4 @@
-# MailBrain Frontend
+# KAIRO Frontend
 
 AI-powered autonomous email operations manager.
 

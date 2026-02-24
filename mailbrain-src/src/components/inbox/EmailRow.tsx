@@ -15,7 +15,7 @@ const EmailRow = ({ email, onClick }: EmailRowProps) => {
     <button
       onClick={() => onClick(email.id)}
       className={cn(
-        "w-full text-left border border-[#2a2a3a] bg-[#11111a] rounded-xl p-4 hover:bg-[#171724] transition-colors",
+        "w-full text-left border border-border bg-secondary rounded-xl p-4 hover:bg-muted transition-colors",
         email.escalated ? "ring-1 ring-red-500/30" : ""
       )}
     >
@@ -23,17 +23,17 @@ const EmailRow = ({ email, onClick }: EmailRowProps) => {
         <div className="flex-1 space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
             <PriorityBadge priority={email.priority} />
-            <span className="text-sm text-white font-medium">{email.sender}</span>
-            <span className="text-xs text-gray-500">{email.subject}</span>
+            <span className="text-sm text-foreground font-medium">{email.sender}</span>
+            <span className="text-xs text-muted-foreground">{email.subject}</span>
           </div>
-          <div className="text-xs text-gray-400 truncate">{email.summary}</div>
+          <div className="text-xs text-muted-foreground truncate">{email.summary}</div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <IntentTag intent={email.intent} />
           <ConfidenceBar score={email.confidence_score} />
-          <span className="text-xs text-gray-400">{email.action_taken}</span>
-          <span className="text-xs text-gray-500">{email.reply_sent ? "Reply Sent" : "Pending"}</span>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-muted-foreground">{email.action_taken}</span>
+          <span className="text-xs text-muted-foreground">{email.reply_sent ? "Reply Sent" : "Pending"}</span>
+          <span className="text-xs text-muted-foreground">
             {email.received_at ? format(new Date(email.received_at), "MMM d, h:mm a") : "--"}
           </span>
         </div>
@@ -43,3 +43,4 @@ const EmailRow = ({ email, onClick }: EmailRowProps) => {
 };
 
 export default EmailRow;
+

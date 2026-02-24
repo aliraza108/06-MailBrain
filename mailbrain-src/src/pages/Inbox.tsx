@@ -79,13 +79,13 @@ const Inbox = () => {
       />
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div className="text-xs text-gray-400">
+        <div className="text-xs text-muted-foreground">
           Showing {showing} of {total}
         </div>
         <div className="flex gap-2">
           <Button
             variant="secondary"
-            className="bg-[#1a1a24] border border-[#2a2a3a]"
+            className="bg-card border border-border"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
           >
@@ -93,7 +93,7 @@ const Inbox = () => {
           </Button>
           <Button
             variant="secondary"
-            className="bg-[#1a1a24] border border-[#2a2a3a]"
+            className="bg-card border border-border"
             onClick={() => setPage((p) => p + 1)}
             disabled={showing >= total}
           >
@@ -115,3 +115,4 @@ const Inbox = () => {
 };
 
 export default Inbox;
+

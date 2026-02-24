@@ -12,7 +12,7 @@ const navItems = [
 
 const MobileNav = () => {
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-[#2a2a3a] bg-[#11111a] z-40">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border bg-secondary z-40">
       <div className="grid grid-cols-5">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -23,7 +23,7 @@ const MobileNav = () => {
               className={({ isActive }) =>
                 cn(
                   "flex flex-col items-center justify-center gap-1 py-2 text-[10px]",
-                  isActive ? "text-indigo-300" : "text-gray-400"
+                  isActive ? "text-primary" : "text-muted-foreground"
                 )
               }
             >
@@ -38,3 +38,4 @@ const MobileNav = () => {
 };
 
 export default MobileNav;
+

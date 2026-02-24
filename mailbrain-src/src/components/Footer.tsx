@@ -63,7 +63,7 @@ const Footer = () => {
           <motion.div variants={itemVariants}>
             <motion.img 
               src={logo} 
-              alt="MailBrain" 
+              alt="KAIRO" 
               className="h-8 mb-4"
               whileHover={{ scale: 1.05 }}
             />
@@ -128,7 +128,7 @@ const Footer = () => {
           transition={{ delay: 0.5 }}
         >
           <p className="text-sm text-muted-foreground">
-            © 2025 MailBrain. All rights reserved.
+            2025 KAIRO. All rights reserved.
           </p>
           <motion.p 
             className="text-sm text-muted-foreground"
@@ -137,7 +137,7 @@ const Footer = () => {
             }}
             transition={{ duration: 3, repeat: Infinity }}
           >
-            Made with 💛 for productivity enthusiasts
+            Made with care for productivity enthusiasts
           </motion.p>
         </motion.div>
       </div>
@@ -146,4 +146,5 @@ const Footer = () => {
 };
 
 export default Footer;
+
 

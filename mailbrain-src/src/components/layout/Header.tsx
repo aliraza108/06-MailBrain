@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { api } from "@/lib/api";
 import { toast } from "@/components/ui/sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useQueryClient } from "@tanstack/react-query";
 
 const titleMap: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -21,10 +22,11 @@ const Header = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [syncing, setSyncing] = useState(false);
+  const queryClient = useQueryClient();
 
   const pageTitle = useMemo(() => {
     if (location.pathname.startsWith("/inbox/")) return "Email Detail";
-    return titleMap[location.pathname] || "MailBrain";
+    return titleMap[location.pathname] || "KAIRO";
   }, [location.pathname]);
 
   const handleSync = async () => {
@@ -32,6 +34,10 @@ const Header = () => {
     try {
       const result = await api.emails.sync(20);
       const count = result?.synced ?? result?.new_emails ?? result?.total ?? 0;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["emails"] }),
+        queryClient.invalidateQueries({ queryKey: ["analytics"] }),
+      ]);
       toast.success(`Synced ${count} new emails`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to sync";
@@ -42,14 +48,14 @@ const Header = () => {
   };
 
   return (
-    <header className="flex items-center justify-between border-b border-[#2a2a3a] bg-[#11111a] px-6 py-4">
+    <header className="flex items-center justify-between border-b border-border bg-secondary px-6 py-4">
       <div>
-        <h1 className="text-lg font-semibold text-white">{pageTitle}</h1>
-        <p className="text-xs text-gray-500">Your inbox, on autopilot.</p>
+        <h1 className="text-lg font-semibold text-foreground">{pageTitle}</h1>
+        <p className="text-xs text-muted-foreground">Your inbox, on autopilot.</p>
       </div>
       <div className="flex items-center gap-3">
         <Button
-          className="bg-indigo-600 hover:bg-indigo-500 text-white"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground"
           onClick={handleSync}
           disabled={syncing}
         >
@@ -58,10 +64,10 @@ const Header = () => {
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 rounded-full border border-[#2a2a3a] bg-[#1a1a24] px-2 py-1">
+            <button className="flex items-center gap-2 rounded-full border border-border bg-card px-2 py-1">
               <Avatar className="h-7 w-7">
                 <AvatarImage src={user?.picture} alt={user?.name || "User"} />
-                <AvatarFallback>{user?.name?.slice(0, 2).toUpperCase() || "MB"}</AvatarFallback>
+                <AvatarFallback>{user?.name?.slice(0, 2).toUpperCase() || "KR"}</AvatarFallback>
               </Avatar>
             </button>
           </DropdownMenuTrigger>
@@ -83,3 +89,5 @@ const Header = () => {
 };
 
 export default Header;
+
+

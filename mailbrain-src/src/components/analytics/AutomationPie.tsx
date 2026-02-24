@@ -15,8 +15,8 @@ const AutomationPie = ({ data, loading }: AutomationPieProps) => {
   }
 
   return (
-    <div className="bg-[#1a1a24] border border-[#2a2a3a] rounded-xl p-6">
-      <div className="text-sm font-semibold text-white mb-4">Automation Breakdown</div>
+    <div className="bg-card border border-border rounded-xl p-6">
+      <div className="text-sm font-semibold text-foreground mb-4">Automation Breakdown</div>
       <div className="h-52">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -34,13 +34,16 @@ const AutomationPie = ({ data, loading }: AutomationPieProps) => {
             </Pie>
             <Tooltip
               contentStyle={{
-                background: "#11111a",
-                border: "1px solid #2a2a3a",
+                background: "hsl(var(--card))",
+                border: "1px solid hsl(var(--border))",
                 borderRadius: 8,
-                color: "#e5e7eb",
+                color: "hsl(var(--foreground))",
               }}
             />
-            <Legend formatter={(value) => String(value).replace(/_/g, " ")} wrapperStyle={{ fontSize: 12 }} />
+            <Legend
+              formatter={(value) => String(value).replace(/_/g, " ")}
+              wrapperStyle={{ fontSize: 12, color: "hsl(var(--muted-foreground))" }}
+            />
           </PieChart>
         </ResponsiveContainer>
       </div>
@@ -49,3 +52,4 @@ const AutomationPie = ({ data, loading }: AutomationPieProps) => {
 };
 
 export default AutomationPie;
+

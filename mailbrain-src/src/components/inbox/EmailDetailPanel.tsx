@@ -76,10 +76,10 @@ const EmailDetailPanel = ({ emailId, open, onOpenChange }: EmailDetailPanelProps
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-xl bg-[#0f0f13] border-l border-[#2a2a3a] overflow-y-auto"
+        className="w-full sm:max-w-xl bg-background border-l border-border overflow-y-auto"
       >
         <SheetHeader>
-          <SheetTitle className="text-white">Email Detail</SheetTitle>
+          <SheetTitle className="text-foreground">Email Detail</SheetTitle>
         </SheetHeader>
         <div className="mt-4 space-y-6">
           {isLoading || !data ? (
@@ -90,54 +90,54 @@ const EmailDetailPanel = ({ emailId, open, onOpenChange }: EmailDetailPanelProps
             </div>
           ) : (
             <>
-              <div className="space-y-2 text-sm text-gray-300">
+              <div className="space-y-2 text-sm text-muted-foreground">
                 <div>
-                  <span className="text-gray-500">FROM:</span> {data.sender}
+                  <span className="text-muted-foreground">FROM:</span> {data.sender}
                 </div>
                 <div>
-                  <span className="text-gray-500">SUBJECT:</span> {data.subject}
+                  <span className="text-muted-foreground">SUBJECT:</span> {data.subject}
                 </div>
                 <div>
-                  <span className="text-gray-500">DATE:</span> {new Date(data.received_at).toLocaleString()}
+                  <span className="text-muted-foreground">DATE:</span> {new Date(data.received_at).toLocaleString()}
                 </div>
               </div>
 
-              <div className="rounded-xl border border-[#2a2a3a] bg-[#1a1a24] p-4 space-y-3">
-                <div className="text-xs uppercase tracking-wide text-gray-400">AI Analysis</div>
+              <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">AI Analysis</div>
                 <div className="flex flex-wrap items-center gap-2">
                   <IntentTag intent={data.intent} />
                   <PriorityBadge priority={data.priority} />
                 </div>
-                <div className="grid grid-cols-2 gap-3 text-xs text-gray-300">
+                <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
                   <div>Sentiment: {data.sentiment}</div>
                   <div>Language: {data.language}</div>
                   <div>Escalation Risk: {data.escalated ? "YES" : "NO"}</div>
                   <div>Department: {data.assigned_department}</div>
                 </div>
                 <ConfidenceBar score={data.confidence_score} />
-                <div className="text-xs text-gray-400">Summary: {data.summary}</div>
-                <div className="text-xs text-gray-400">Action: {data.action_taken}</div>
+                <div className="text-xs text-muted-foreground">Summary: {data.summary}</div>
+                <div className="text-xs text-muted-foreground">Action: {data.action_taken}</div>
               </div>
 
-              <Separator className="bg-[#2a2a3a]" />
+              <Separator className="bg-border" />
 
               <div className="space-y-2">
-                <div className="text-xs uppercase tracking-wide text-gray-400">Email Body</div>
-                <div className="text-sm text-gray-200 whitespace-pre-line">{data.body}</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">Email Body</div>
+                <div className="text-sm text-foreground whitespace-pre-line">{data.body}</div>
               </div>
 
-              <Separator className="bg-[#2a2a3a]" />
+              <Separator className="bg-border" />
 
               <div className="space-y-3">
-                <div className="text-xs uppercase tracking-wide text-gray-400">AI-Generated Reply</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">AI-Generated Reply</div>
                 {editing ? (
                   <Textarea
-                    className="min-h-[140px] bg-[#11111a] border-[#2a2a3a] text-gray-200"
+                    className="min-h-[140px] bg-secondary border-border text-foreground"
                     value={replyBody}
                     onChange={(e) => setReplyBody(e.target.value)}
                   />
                 ) : (
-                  <div className="text-sm text-gray-200 whitespace-pre-line">{replyBody}</div>
+                  <div className="text-sm text-foreground whitespace-pre-line">{replyBody}</div>
                 )}
 
                 {data.reply_sent ? (
@@ -148,14 +148,14 @@ const EmailDetailPanel = ({ emailId, open, onOpenChange }: EmailDetailPanelProps
                   <div className="flex flex-wrap gap-2">
                     <Button
                       variant="secondary"
-                      className="bg-[#1a1a24] border border-[#2a2a3a]"
+                      className="bg-card border border-border"
                       onClick={() => setEditing((prev) => !prev)}
                     >
                       {editing ? "Cancel Edit" : "Edit Reply"}
                     </Button>
                     {editing ? (
                       <Button
-                        className="bg-indigo-600 hover:bg-indigo-500"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground"
                         onClick={handleSendEdited}
                         disabled={sending}
                       >
@@ -163,7 +163,7 @@ const EmailDetailPanel = ({ emailId, open, onOpenChange }: EmailDetailPanelProps
                       </Button>
                     ) : (
                       <Button
-                        className="bg-indigo-600 hover:bg-indigo-500"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground"
                         onClick={handleApprove}
                         disabled={sending}
                       >
@@ -185,3 +185,4 @@ const EmailDetailPanel = ({ emailId, open, onOpenChange }: EmailDetailPanelProps
 };
 
 export default EmailDetailPanel;
+

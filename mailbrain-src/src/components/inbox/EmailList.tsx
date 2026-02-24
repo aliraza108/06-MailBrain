@@ -20,7 +20,7 @@ const EmailList = ({ emails, loading, onSelect }: EmailListProps) => {
   }
 
   if (!emails.length) {
-    return <div className="text-sm text-gray-400">No emails match your filters.</div>;
+    return <div className="text-sm text-muted-foreground">No emails match your filters.</div>;
   }
 
   return (
@@ -33,3 +33,4 @@ const EmailList = ({ emails, loading, onSelect }: EmailListProps) => {
 };
 
 export default EmailList;
+

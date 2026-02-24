@@ -12,22 +12,22 @@ const DepartmentChart = ({ data, loading }: DepartmentChartProps) => {
   }
 
   return (
-    <div className="bg-[#1a1a24] border border-[#2a2a3a] rounded-xl p-6">
-      <div className="text-sm font-semibold text-white mb-4">Department Routing</div>
+    <div className="bg-card border border-border rounded-xl p-6">
+      <div className="text-sm font-semibold text-foreground mb-4">Department Routing</div>
       <div className="h-52">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data || []} layout="vertical">
-            <XAxis type="number" stroke="#6b7280" fontSize={12} tickLine={false} />
-            <YAxis dataKey="department" type="category" stroke="#6b7280" fontSize={12} tickLine={false} width={120} />
+            <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} />
+            <YAxis dataKey="department" type="category" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} width={120} />
             <Tooltip
               contentStyle={{
-                background: "#11111a",
-                border: "1px solid #2a2a3a",
+                background: "hsl(var(--card))",
+                border: "1px solid hsl(var(--border))",
                 borderRadius: 8,
-                color: "#e5e7eb",
+                color: "hsl(var(--foreground))",
               }}
             />
-            <Bar dataKey="count" fill="#6366f1" radius={[6, 6, 6, 6]} />
+            <Bar dataKey="count" fill="hsl(var(--primary))" radius={[6, 6, 6, 6]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -36,3 +36,4 @@ const DepartmentChart = ({ data, loading }: DepartmentChartProps) => {
 };
 
 export default DepartmentChart;
+

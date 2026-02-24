@@ -7,7 +7,7 @@ const steps = [
     icon: Brain,
     title: "Understands your email tone",
     description:
-      "MailBrain analyzes your writing style and preferences to match your unique voice perfectly.",
+      "KAIRO analyzes your writing style and preferences to match your unique voice perfectly.",
   },
   {
     icon: MessageSquare,
@@ -165,4 +165,5 @@ const HowItWorks = () => {
 };
 
 export default HowItWorks;
+
 

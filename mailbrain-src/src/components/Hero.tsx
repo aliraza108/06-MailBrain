@@ -2,6 +2,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Play, Sparkles } from "lucide-react";
 import { useRef } from "react";
+import { Link } from "react-router-dom";
 
 const Hero = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -125,7 +126,7 @@ const Hero = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
             >
-              Let MailBrain handle the rest.
+              Let KAIRO handle the rest.
             </motion.span>
           </motion.h1>
 
@@ -134,8 +135,8 @@ const Hero = () => {
             variants={itemVariants}
             className="text-xl text-muted-foreground max-w-2xl mx-auto"
           >
-            Stop wasting time on emails. MailBrain drafts, replies, and manages
-            your inbox intelligently — so you can focus on what matters.
+            Stop wasting time on emails. KAIRO drafts, replies, and manages
+            your inbox intelligently - so you can focus on what matters.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -148,10 +149,11 @@ const Hero = () => {
               whileTap={{ scale: 0.95 }}
             >
               <Button
+                asChild
                 size="lg"
                 className="magnetic-hover bg-primary text-primary-foreground text-lg px-8 py-6 glow-effect hover-gradient-shift click-bounce"
               >
-                Try MailBrain Free
+                <Link to="/login">Try KAIRO Free</Link>
               </Button>
             </motion.div>
             <motion.div
@@ -159,17 +161,21 @@ const Hero = () => {
               whileTap={{ scale: 0.95 }}
             >
               <Button
+                asChild
                 size="lg"
                 variant="outline"
                 className="text-lg px-8 py-6 group hover-glow"
               >
-                <motion.div
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <Play className="w-5 h-5 mr-2" />
-                </motion.div>
-                Watch Demo
+                <a href="#features">
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="inline-flex items-center"
+                  >
+                    <Play className="w-5 h-5 mr-2" />
+                    Watch Demo
+                  </motion.div>
+                </a>
               </Button>
             </motion.div>
           </motion.div>
@@ -222,4 +228,5 @@ const Hero = () => {
 };
 
 export default Hero;
+
 

@@ -2,6 +2,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { useRef } from "react";
+import { Link } from "react-router-dom";
 
 const plans = [
   {
@@ -220,6 +221,7 @@ const Pricing = () => {
                 whileTap={{ scale: 0.98 }}
               >
                 <Button
+                  asChild
                   className={`w-full ${
                     plan.popular
                       ? "bg-primary text-primary-foreground hover-glow"
@@ -227,7 +229,7 @@ const Pricing = () => {
                   }`}
                   variant={plan.popular ? "default" : "outline"}
                 >
-                  {plan.cta}
+                  <Link to="/login">{plan.cta}</Link>
                 </Button>
               </motion.div>
             </motion.div>

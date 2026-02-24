@@ -52,47 +52,47 @@ const AnalysisResult = ({ email }: AnalysisResultProps) => {
   };
 
   return (
-    <div className="bg-[#1a1a24] border border-[#2a2a3a] rounded-xl p-6 space-y-4">
-      <div className="text-sm font-semibold text-white">AI Analysis Result</div>
+    <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+      <div className="text-sm font-semibold text-foreground">AI Analysis Result</div>
       <div className="flex flex-wrap gap-2">
         <IntentTag intent={email.intent} />
         <PriorityBadge priority={email.priority} />
       </div>
-      <div className="grid grid-cols-2 gap-3 text-xs text-gray-300">
+      <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
         <div>Sentiment: {email.sentiment}</div>
         <div>Language: {email.language}</div>
         <div>Escalation Risk: {email.escalated ? "YES" : "NO"}</div>
         <div>Department: {email.assigned_department}</div>
       </div>
       <ConfidenceBar score={email.confidence_score} />
-      <div className="text-xs text-gray-400">Summary: {email.summary}</div>
-      <div className="text-xs text-gray-400">Action: {email.action_taken}</div>
+      <div className="text-xs text-muted-foreground">Summary: {email.summary}</div>
+      <div className="text-xs text-muted-foreground">Action: {email.action_taken}</div>
 
-      <div className="border-t border-[#2a2a3a] pt-4">
-        <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">Email Body</div>
-        <div className="text-sm text-gray-200 whitespace-pre-line">{email.body}</div>
+      <div className="border-t border-border pt-4">
+        <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Email Body</div>
+        <div className="text-sm text-foreground whitespace-pre-line">{email.body}</div>
       </div>
 
-      <div className="border-t border-[#2a2a3a] pt-4 space-y-3">
-        <div className="text-xs uppercase tracking-wide text-gray-400">AI-Generated Reply</div>
+      <div className="border-t border-border pt-4 space-y-3">
+        <div className="text-xs uppercase tracking-wide text-muted-foreground">AI-Generated Reply</div>
         {editing ? (
           <Textarea
-            className="min-h-[140px] bg-[#11111a] border-[#2a2a3a] text-gray-200"
+            className="min-h-[140px] bg-secondary border-border text-foreground"
             value={replyBody}
             onChange={(e) => setReplyBody(e.target.value)}
           />
         ) : (
-          <div className="text-sm text-gray-200 whitespace-pre-line">{replyBody}</div>
+          <div className="text-sm text-foreground whitespace-pre-line">{replyBody}</div>
         )}
         <div className="flex flex-wrap gap-2">
           <Button
             variant="secondary"
-            className="bg-[#11111a] border border-[#2a2a3a]"
+            className="bg-secondary border border-border"
             onClick={() => setEditing((prev) => !prev)}
           >
             {editing ? "Cancel Edit" : "Edit Reply"}
           </Button>
-          <Button className="bg-indigo-600 hover:bg-indigo-500" onClick={editing ? handleSendEdited : handleApprove} disabled={sending}>
+          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={editing ? handleSendEdited : handleApprove} disabled={sending}>
             Approve & Send
           </Button>
         </div>
@@ -102,3 +102,4 @@ const AnalysisResult = ({ email }: AnalysisResultProps) => {
 };
 
 export default AnalysisResult;
+

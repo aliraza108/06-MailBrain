@@ -7,7 +7,7 @@ const integrations = [
   { icon: Mail, name: "Outlook", color: "text-blue-500" },
   { icon: Slack, name: "Slack", color: "text-purple-500" },
   { icon: Calendar, name: "Calendar", color: "text-green-500" },
-  { icon: FileText, name: "Notion", color: "text-gray-400" },
+  { icon: FileText, name: "Notion", color: "text-muted-foreground" },
   { icon: Users, name: "Teams", color: "text-blue-400" },
 ];
 
@@ -141,3 +141,4 @@ const Integrations = () => {
 };
 
 export default Integrations;
+

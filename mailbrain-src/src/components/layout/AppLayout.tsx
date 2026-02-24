@@ -5,7 +5,7 @@ import MobileNav from "@/components/layout/MobileNav";
 
 const AppLayout = () => {
   return (
-    <div className="min-h-screen bg-[#0f0f13] text-foreground flex">
+    <div className="min-h-screen bg-background text-foreground flex">
       <Sidebar />
       <div className="flex-1 flex flex-col min-h-screen">
         <Header />
@@ -19,3 +19,4 @@ const AppLayout = () => {
 };
 
 export default AppLayout;
+

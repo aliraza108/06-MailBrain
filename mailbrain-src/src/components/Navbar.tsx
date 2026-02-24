@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { Link } from "react-router-dom";
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -36,7 +37,7 @@ const Navbar = () => {
             whileTap={{ scale: 0.95 }}
             className="flex items-center space-x-2"
           >
-            <img src={logo} alt="MailBrain" className="h-8 md:h-10" />
+            <img src={logo} alt="KAIRO" className="h-8 md:h-10" />
           </motion.div>
 
           {/* Desktop Nav */}
@@ -64,8 +65,8 @@ const Navbar = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Button variant="ghost" size="sm" className="hover-color-shift">
-                Login
+              <Button asChild variant="ghost" size="sm" className="hover-color-shift">
+                <Link to="/login">Login</Link>
               </Button>
             </motion.div>
             <motion.div
@@ -75,8 +76,8 @@ const Navbar = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Button className="magnetic-hover bg-primary text-primary-foreground hover-glow">
-                Try MailBrain Free
+              <Button asChild className="magnetic-hover bg-primary text-primary-foreground hover-glow">
+                <Link to="/login">Try KAIRO Free</Link>
               </Button>
             </motion.div>
           </div>
@@ -128,8 +129,8 @@ const Navbar = () => {
               animate={{ opacity: mobileMenuOpen ? 1 : 0 }}
               transition={{ delay: 0.3 }}
             >
-              <Button variant="ghost" className="w-full">
-                Login
+              <Button asChild variant="ghost" className="w-full">
+                <Link to="/login">Login</Link>
               </Button>
             </motion.div>
             <motion.div
@@ -137,8 +138,8 @@ const Navbar = () => {
               animate={{ opacity: mobileMenuOpen ? 1 : 0 }}
               transition={{ delay: 0.4 }}
             >
-              <Button className="w-full bg-primary text-primary-foreground hover-glow">
-                Try MailBrain Free
+              <Button asChild className="w-full bg-primary text-primary-foreground hover-glow">
+                <Link to="/login">Try KAIRO Free</Link>
               </Button>
             </motion.div>
           </div>

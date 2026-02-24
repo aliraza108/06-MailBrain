@@ -16,7 +16,7 @@ import type {
 } from "@/lib/types";
 import { toast } from "@/components/ui/sonner";
 
-const BASE_URL = "https://06-mailbrain-api.vercel.app";
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || "https://06-mailbrain-api.vercel.app").replace(/\/+$/, "");
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;

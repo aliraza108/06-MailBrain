@@ -62,14 +62,14 @@ const Analytics = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-400">Overview</div>
+        <div className="text-sm text-muted-foreground">Overview</div>
         <div className="flex gap-2">
           {ranges.map((value) => (
             <Button
               key={value}
               size="sm"
               variant="secondary"
-              className={value === range ? "bg-indigo-600 text-white" : "bg-[#1a1a24] border border-[#2a2a3a]"}
+              className={value === range ? "bg-primary text-primary-foreground" : "bg-card border border-border"}
               onClick={() => setRange(value)}
             >
               {value}d
@@ -87,9 +87,9 @@ const Analytics = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {overviewCards.map((card) => (
-            <div key={card.label} className="bg-[#1a1a24] border border-[#2a2a3a] rounded-xl p-5">
-              <div className="text-xs text-gray-400">{card.label}</div>
-              <div className="text-2xl font-semibold text-white">{card.value}</div>
+            <div key={card.label} className="bg-card border border-border rounded-xl p-5">
+              <div className="text-xs text-muted-foreground">{card.label}</div>
+              <div className="text-2xl font-semibold text-foreground">{card.value}</div>
             </div>
           ))}
         </div>
@@ -100,16 +100,16 @@ const Analytics = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
           <IntentDonut data={intent.data?.intents} loading={intent.isLoading} title="Intent Distribution" />
-          <div className="bg-[#1a1a24] border border-[#2a2a3a] rounded-xl p-4">
-            <div className="text-xs text-gray-400 mb-2">Intent Breakdown</div>
-            <div className="space-y-2 text-sm text-gray-300">
+          <div className="bg-card border border-border rounded-xl p-4">
+            <div className="text-xs text-muted-foreground mb-2">Intent Breakdown</div>
+            <div className="space-y-2 text-sm text-muted-foreground">
               {(intent.data?.intents || []).map((item) => (
                 <div key={item.intent} className="flex items-center justify-between">
                   <span>{item.intent.replace(/_/g, " ")}</span>
-                  <span className="text-gray-400">{item.count}</span>
+                  <span className="text-muted-foreground">{item.count}</span>
                 </div>
               ))}
-              {!intent.data?.intents?.length && <div className="text-xs text-gray-500">No data.</div>}
+              {!intent.data?.intents?.length && <div className="text-xs text-muted-foreground">No data.</div>}
             </div>
           </div>
         </div>
@@ -127,3 +127,4 @@ const Analytics = () => {
 };
 
 export default Analytics;
+

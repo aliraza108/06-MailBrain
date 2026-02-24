@@ -19,7 +19,7 @@ const ConfidenceBar = ({ score }: ConfidenceBarProps) => {
   return (
     <div className="flex flex-col gap-1 min-w-[80px]">
       <span className={cn("text-xs font-semibold", color)}>{percent}%</span>
-      <div className="h-1 w-full rounded-full bg-[#2a2a3a]">
+      <div className="h-1 w-full rounded-full bg-border">
         <div className={cn("h-1 rounded-full", barColor)} style={{ width: `${percent}%` }} />
       </div>
     </div>

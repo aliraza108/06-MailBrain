@@ -47,8 +47,8 @@ const StatsCards = ({ stats, loading }: StatsCardsProps) => {
       label: "Automation Rate",
       value: `${Math.round(automationPercent)}%`,
       icon: TrendingUp,
-      color: "text-indigo-300",
-      bg: "from-indigo-500/20 to-indigo-500/5",
+      color: "text-primary",
+      bg: "from-primary/20 to-primary/5",
     },
   ];
 
@@ -59,13 +59,13 @@ const StatsCards = ({ stats, loading }: StatsCardsProps) => {
         return (
           <div
             key={card.label}
-            className="bg-[#1a1a24] border border-[#2a2a3a] rounded-xl p-6 shadow-sm"
+            className="bg-card border border-border rounded-xl p-6 shadow-sm"
           >
             <div className={`rounded-lg bg-gradient-to-br ${card.bg} p-3 w-fit`}>
               <Icon className={`h-5 w-5 ${card.color}`} />
             </div>
-            <div className="mt-4 text-2xl font-semibold text-white">{card.value}</div>
-            <div className="text-xs text-gray-400">{card.label}</div>
+            <div className="mt-4 text-2xl font-semibold text-foreground">{card.value}</div>
+            <div className="text-xs text-muted-foreground">{card.label}</div>
           </div>
         );
       })}
@@ -74,3 +74,4 @@ const StatsCards = ({ stats, loading }: StatsCardsProps) => {
 };
 
 export default StatsCards;
+

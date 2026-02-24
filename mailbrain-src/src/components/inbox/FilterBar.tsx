@@ -33,7 +33,7 @@ const FilterBar = ({ filters, onChange }: FilterBarProps) => {
         value={filters.priority}
         onValueChange={(value) => onChange({ ...filters, priority: value })}
       >
-        <SelectTrigger className="w-full md:w-44 bg-[#1a1a24] border-[#2a2a3a]">
+        <SelectTrigger className="w-full md:w-44 bg-card border-border">
           <SelectValue placeholder="Priority" />
         </SelectTrigger>
         <SelectContent>
@@ -46,7 +46,7 @@ const FilterBar = ({ filters, onChange }: FilterBarProps) => {
       </Select>
 
       <Select value={filters.intent} onValueChange={(value) => onChange({ ...filters, intent: value })}>
-        <SelectTrigger className="w-full md:w-48 bg-[#1a1a24] border-[#2a2a3a]">
+        <SelectTrigger className="w-full md:w-48 bg-card border-border">
           <SelectValue placeholder="Intent" />
         </SelectTrigger>
         <SelectContent>
@@ -60,7 +60,7 @@ const FilterBar = ({ filters, onChange }: FilterBarProps) => {
       </Select>
 
       <Select value={filters.status} onValueChange={(value) => onChange({ ...filters, status: value })}>
-        <SelectTrigger className="w-full md:w-40 bg-[#1a1a24] border-[#2a2a3a]">
+        <SelectTrigger className="w-full md:w-40 bg-card border-border">
           <SelectValue placeholder="Status" />
         </SelectTrigger>
         <SelectContent>
@@ -72,7 +72,7 @@ const FilterBar = ({ filters, onChange }: FilterBarProps) => {
       </Select>
 
       <Input
-        className="w-full md:flex-1 bg-[#1a1a24] border-[#2a2a3a]"
+        className="w-full md:flex-1 bg-card border-border"
         placeholder="Search sender or subject..."
         value={filters.search}
         onChange={(e) => onChange({ ...filters, search: e.target.value })}
@@ -82,3 +82,4 @@ const FilterBar = ({ filters, onChange }: FilterBarProps) => {
 };
 
 export default FilterBar;
+

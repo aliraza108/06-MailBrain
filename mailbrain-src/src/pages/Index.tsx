@@ -1,24 +1,42 @@
-import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
-import SkeletonLoader from "@/components/ui/SkeletonLoader";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import Navbar from "@/components/Navbar";
+import Hero from "@/components/Hero";
+import HowItWorks from "@/components/HowItWorks";
+import Features from "@/components/Features";
+import Integrations from "@/components/Integrations";
+import Testimonials from "@/components/Testimonials";
+import Pricing from "@/components/Pricing";
+import FAQ from "@/components/FAQ";
+import Footer from "@/components/Footer";
 
 const Index = () => {
-  const [target, setTarget] = useState<string | null>(null);
+  const location = useLocation();
 
   useEffect(() => {
-    const token = localStorage.getItem("mailbrain_token");
-    setTarget(token ? "/dashboard" : "/login");
-  }, []);
+    const params = new URLSearchParams(location.search);
+    const tokenFromQuery = params.get("token");
+    if (tokenFromQuery) {
+      localStorage.setItem("mailbrain_token", tokenFromQuery);
+      window.history.replaceState({}, "", "/");
+    }
+  }, [location.search]);
 
-  if (!target) {
-    return (
-      <div className="min-h-screen bg-[#0f0f13] p-8">
-        <SkeletonLoader className="h-8 w-48" />
-      </div>
-    );
-  }
-
-  return <Navigate to={target} replace />;
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <Hero />
+      <HowItWorks />
+      <Features />
+      <Integrations />
+      <Testimonials />
+      <Pricing />
+      <FAQ />
+      <Footer />
+    </div>
+  );
 };
 
 export default Index;
+
+

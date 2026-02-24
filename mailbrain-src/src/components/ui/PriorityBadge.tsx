@@ -9,7 +9,7 @@ const priorityClasses: Record<EmailPriority, string> = {
   CRITICAL: "bg-red-500/20 text-red-400 border border-red-500/30",
   HIGH: "bg-orange-500/20 text-orange-400 border border-orange-500/30",
   NORMAL: "bg-blue-500/20 text-blue-400 border border-blue-500/30",
-  LOW: "bg-gray-500/20 text-gray-400 border border-gray-500/30",
+  LOW: "bg-gray-500/20 text-muted-foreground border border-gray-500/30",
 };
 
 const PriorityBadge = ({ priority }: PriorityBadgeProps) => {
@@ -26,3 +26,4 @@ const PriorityBadge = ({ priority }: PriorityBadgeProps) => {
 };
 
 export default PriorityBadge;
+

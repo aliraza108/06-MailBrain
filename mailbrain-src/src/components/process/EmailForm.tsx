@@ -14,47 +14,47 @@ const EmailForm = ({ onSubmit, loading }: EmailFormProps) => {
 
   return (
     <form
-      className="space-y-4 bg-[#1a1a24] border border-[#2a2a3a] rounded-xl p-6"
+      className="space-y-4 bg-card border border-border rounded-xl p-6"
       onSubmit={handleSubmit(onSubmit)}
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="text-xs text-gray-400">From (Email)</label>
+          <label className="text-xs text-muted-foreground">From (Email)</label>
           <Input
-            className="mt-1 bg-[#11111a] border-[#2a2a3a]"
+            className="mt-1 bg-secondary border-border"
             placeholder="customer@example.com"
             {...register("sender", { required: true })}
           />
         </div>
         <div>
-          <label className="text-xs text-gray-400">Sender Name</label>
+          <label className="text-xs text-muted-foreground">Sender Name</label>
           <Input
-            className="mt-1 bg-[#11111a] border-[#2a2a3a]"
+            className="mt-1 bg-secondary border-border"
             placeholder="Optional"
             {...register("sender_name")}
           />
         </div>
       </div>
       <div>
-        <label className="text-xs text-gray-400">Subject</label>
-        <Input className="mt-1 bg-[#11111a] border-[#2a2a3a]" {...register("subject", { required: true })} />
+        <label className="text-xs text-muted-foreground">Subject</label>
+        <Input className="mt-1 bg-secondary border-border" {...register("subject", { required: true })} />
       </div>
       <div>
-        <label className="text-xs text-gray-400">Email Body</label>
+        <label className="text-xs text-muted-foreground">Email Body</label>
         <Textarea
-          className="mt-1 min-h-[160px] bg-[#11111a] border-[#2a2a3a]"
+          className="mt-1 min-h-[160px] bg-secondary border-border"
           {...register("body", { required: true })}
         />
       </div>
       <div>
-        <label className="text-xs text-gray-400">Thread Context</label>
+        <label className="text-xs text-muted-foreground">Thread Context</label>
         <Textarea
-          className="mt-1 min-h-[100px] bg-[#11111a] border-[#2a2a3a]"
+          className="mt-1 min-h-[100px] bg-secondary border-border"
           placeholder="Paste previous thread context (optional)"
           {...register("thread_context")}
         />
       </div>
-      <Button type="submit" className="bg-indigo-600 hover:bg-indigo-500" disabled={loading}>
+      <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
         {loading ? "Analyzing..." : "Analyze with AI"}
       </Button>
     </form>
@@ -62,3 +62,4 @@ const EmailForm = ({ onSubmit, loading }: EmailFormProps) => {
 };
 
 export default EmailForm;
+
