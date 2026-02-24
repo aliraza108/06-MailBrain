@@ -7,6 +7,7 @@ import { useApproveReply, useEmailDetail, useEmails, useSendReply } from "@/hook
 import { toast } from "@/components/ui/sonner";
 
 const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
+const PAGE_SIZE = 10;
 
 function getEmailDate(email: { received_at?: string; processed_at?: string }) {
   const raw = email.received_at || email.processed_at;
@@ -32,7 +33,7 @@ const Inbox = () => {
 
   const emailsQuery = useEmails({
     page,
-    page_size: 20,
+    page_size: PAGE_SIZE,
     intent: intentFilter,
     priority: priorityFilter,
   });
@@ -106,7 +107,7 @@ const Inbox = () => {
           <div className="mt-4 flex items-center justify-between">
             <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
             <span className="text-xs text-muted-foreground">Page {page}</span>
-            <Button size="sm" variant="outline" onClick={() => setPage((p) => p + 1)} disabled={(emailsQuery.data?.emails?.length || 0) < 20}>Next</Button>
+            <Button size="sm" variant="outline" onClick={() => setPage((p) => p + 1)} disabled={(emailsQuery.data?.emails?.length || 0) < PAGE_SIZE}>Next</Button>
           </div>
         </div>
 

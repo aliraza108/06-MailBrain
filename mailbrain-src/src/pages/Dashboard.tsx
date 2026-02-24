@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/sonner";
 
 const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
+const PAGE_SIZE = 10;
 
 function getEmailDate(email: { received_at?: string; processed_at?: string }) {
   const raw = email.received_at || email.processed_at;
@@ -21,16 +22,16 @@ function getEmailDate(email: { received_at?: string; processed_at?: string }) {
 }
 
 const Dashboard = () => {
-  const {
-    selectedEmailId,
-    setSelectedEmailId,
-    intentFilter,
-    priorityFilter,
-  } = useDashboardState();
+  const { selectedEmailId, setSelectedEmailId, intentFilter, priorityFilter } = useDashboardState();
+
+  const [genSubject, setGenSubject] = useState("");
+  const [genBody, setGenBody] = useState("");
+  const [draft, setDraft] = useState("");
+  const [emailPage, setEmailPage] = useState(1);
 
   const emailsQuery = useEmails({
-    page: 1,
-    page_size: 20,
+    page: emailPage,
+    page_size: PAGE_SIZE,
     intent: intentFilter,
     priority: priorityFilter,
   });
@@ -38,10 +39,6 @@ const Dashboard = () => {
   const selectedEmailQuery = useEmailDetail(selectedEmailId, Boolean(selectedEmailId));
   const overview = useOverviewStats(7);
   const profileQuery = useQuery({ queryKey: ["profile"], queryFn: api.profile.get });
-
-  const [genSubject, setGenSubject] = useState("");
-  const [genBody, setGenBody] = useState("");
-  const [draft, setDraft] = useState("");
 
   const generateReply = useGenerateReply();
   const sendEmail = useSendEmail();
@@ -116,15 +113,20 @@ const Dashboard = () => {
               >
                 <div className="text-xs text-muted-foreground truncate">{email.sender}</div>
                 <div className="font-medium text-sm truncate">{email.subject}</div>
-                <div className="text-xs text-muted-foreground">
-                  {getEmailDate(email)?.toLocaleString() || "No date"}
-                </div>
+                <div className="text-xs text-muted-foreground">{getEmailDate(email)?.toLocaleString() || "No date"}</div>
                 <div className="text-xs text-muted-foreground truncate">{email.intent || "unknown"}</div>
               </button>
             ))}
-            {!recentEmails.length && (
-              <div className="text-xs text-muted-foreground">No emails from the last 10 days yet.</div>
-            )}
+            {!recentEmails.length && <div className="text-xs text-muted-foreground">No emails from the last 10 days yet.</div>}
+          </div>
+          <div className="mt-3 flex items-center justify-between">
+            <Button size="sm" variant="outline" onClick={() => setEmailPage((p) => Math.max(1, p - 1))} disabled={emailPage === 1}>
+              Previous
+            </Button>
+            <span className="text-xs text-muted-foreground">Page {emailPage}</span>
+            <Button size="sm" variant="outline" onClick={() => setEmailPage((p) => p + 1)} disabled={(emailsQuery.data?.emails?.length || 0) < PAGE_SIZE}>
+              Next
+            </Button>
           </div>
         </div>
 
@@ -142,19 +144,12 @@ const Dashboard = () => {
                   <div className="text-xs text-muted-foreground">Subject</div>
                   <div className="text-sm font-medium">{selectedEmailQuery.data.subject}</div>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  Date: {getEmailDate(selectedEmailQuery.data)?.toLocaleString() || "No date"}
-                </div>
+                <div className="text-xs text-muted-foreground">Date: {getEmailDate(selectedEmailQuery.data)?.toLocaleString() || "No date"}</div>
                 <div>
                   <div className="text-xs text-muted-foreground">Body</div>
                   <div className="text-sm whitespace-pre-wrap max-h-40 overflow-auto">{selectedEmailQuery.data.body || "No body"}</div>
                 </div>
-                <Textarea
-                  value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
-                  placeholder="AI generated draft appears here"
-                  className="min-h-[140px]"
-                />
+                <Textarea value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="AI generated draft appears here" className="min-h-[140px]" />
                 <div className="flex gap-2">
                   <Button
                     onClick={async () => {

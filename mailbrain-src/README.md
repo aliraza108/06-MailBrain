@@ -14,6 +14,10 @@ npm install
 npm run dev
 ```
 
+## Deploy URLs
+- Frontend: `https://07-mailbrain.vercel.app`
+- API: `https://07-mailbrain-api.vercel.app`
+
 ## Environment variables
 Create `.env` in the frontend root:
 

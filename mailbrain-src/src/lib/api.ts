@@ -24,7 +24,7 @@ import type {
 } from "@/lib/types";
 
 const env = import.meta.env as Record<string, string | undefined>;
-const BASE_URL = (env.VITE_API_URL || env.VITE_API_BASE_URL || env.NEXT_PUBLIC_API_URL || "https://06-mailbrain-api.vercel.app").replace(/\/+$/, "");
+const BASE_URL = (env.VITE_API_URL || env.VITE_API_BASE_URL || env.NEXT_PUBLIC_API_URL || "https://07-mailbrain-api.vercel.app").replace(/\/+$/, "");
 const TOKEN_KEY = "mailbrain_token";
 
 export function getStoredToken(): string | null {

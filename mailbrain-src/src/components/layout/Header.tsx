@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,14 +20,29 @@ const titleMap: Record<string, string> = {
   "/settings": "Profile Settings",
 };
 
+type SyncUnit = "sec" | "hour" | "day";
+
+const UNIT_TO_MS: Record<SyncUnit, number> = {
+  sec: 1000,
+  hour: 60 * 60 * 1000,
+  day: 24 * 60 * 60 * 1000,
+};
+
 const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
   const { syncEnabled, setSyncEnabled, syncIntervalMs, setSyncIntervalMs } = useDashboardState();
+  const [syncUnit, setSyncUnit] = useState<SyncUnit>("sec");
+  const [syncValue, setSyncValue] = useState<number>(Math.max(5, Math.floor(syncIntervalMs / 1000)));
 
   const pageTitle = useMemo(() => titleMap[location.pathname] || "MailMind", [location.pathname]);
   const syncMutation = useAutoSync(syncEnabled, syncIntervalMs, 20);
+
+  useEffect(() => {
+    const next = Math.round(syncIntervalMs / UNIT_TO_MS[syncUnit]);
+    setSyncValue(syncUnit === "sec" ? Math.max(5, next) : Math.max(1, next));
+  }, [syncIntervalMs, syncUnit]);
 
   const handleManualSync = async () => {
     try {
@@ -61,17 +76,30 @@ const Header = () => {
             <Switch checked={syncEnabled} onCheckedChange={setSyncEnabled} />
             <input
               type="number"
-              min={5}
+              min={syncUnit === "sec" ? 5 : 1}
               step={1}
-              value={Math.max(1, Math.floor(syncIntervalMs / 1000))}
+              value={syncValue}
               onChange={(event) => {
-                const seconds = Number(event.target.value);
-                if (!Number.isFinite(seconds)) return;
-                setSyncIntervalMs(Math.max(5, seconds) * 1000);
+                const value = Number(event.target.value);
+                if (!Number.isFinite(value)) return;
+                const clamped = syncUnit === "sec" ? Math.max(5, value) : Math.max(1, value);
+                setSyncValue(clamped);
+                setSyncIntervalMs(clamped * UNIT_TO_MS[syncUnit]);
               }}
               className="w-20 rounded border border-border bg-background px-2 py-1 text-xs text-foreground outline-none"
             />
-            <span className="text-xs text-muted-foreground">sec</span>
+            <select
+              value={syncUnit}
+              onChange={(event) => {
+                const nextUnit = event.target.value as SyncUnit;
+                setSyncUnit(nextUnit);
+              }}
+              className="rounded border border-border bg-background px-2 py-1 text-xs text-foreground outline-none"
+            >
+              <option value="sec">sec</option>
+              <option value="hour">hour</option>
+              <option value="day">day</option>
+            </select>
           </div>
 
           <Button onClick={handleManualSync} disabled={syncMutation.isPending} className="bg-primary hover:bg-primary/90 text-primary-foreground">
