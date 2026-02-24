@@ -19,6 +19,9 @@ export const SYNC_INTERVALS = [
   { label: "1d", ms: 86_400_000 },
 ] as const;
 
+export const DEFAULT_INCLUDE_CATEGORIES = ["primary", "updates"] as const;
+export const DEFAULT_EXCLUDE_CATEGORIES = ["promotions", "social"] as const;
+
 export function useEmails(params: EmailListParams) {
   return useQuery<EmailListResponse>({
     queryKey: ["emails", params],
@@ -37,8 +40,28 @@ export function useEmailDetail(id?: string, enabled = true) {
 
 export function useSyncEmails() {
   const queryClient = useQueryClient();
-  return useMutation<SyncResult, Error, { maxResults?: number; method?: "GET" | "POST" }>({
-    mutationFn: ({ maxResults = 20, method = "POST" }) => api.emails.sync(maxResults, method),
+  return useMutation<
+    SyncResult,
+    Error,
+    {
+      maxResults?: number;
+      method?: "GET" | "POST";
+      includeCategories?: string[];
+      excludeCategories?: string[];
+    }
+  >({
+    mutationFn: ({
+      maxResults = 20,
+      method = "POST",
+      includeCategories = [...DEFAULT_INCLUDE_CATEGORIES],
+      excludeCategories = [...DEFAULT_EXCLUDE_CATEGORIES],
+    }) =>
+      api.emails.sync({
+        maxResults,
+        method,
+        includeCategories,
+        excludeCategories,
+      }),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["emails"] }),

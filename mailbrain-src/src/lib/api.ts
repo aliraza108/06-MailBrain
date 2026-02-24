@@ -46,6 +46,13 @@ export function clearStoredToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
+type SyncOptions = {
+  maxResults?: number;
+  method?: "GET" | "POST";
+  includeCategories?: string[];
+  excludeCategories?: string[];
+};
+
 function buildQuery(params?: Record<string, string | number | boolean | undefined>): string {
   if (!params) return "";
   const search = new URLSearchParams();
@@ -112,8 +119,22 @@ export const api = {
     list: (params?: EmailListParams) =>
       request<EmailListResponse>(`/emails/${buildQuery(params as Record<string, string | number | boolean | undefined>)}`),
     get: (id: string) => request<EmailDetail>(`/emails/${id}`),
-    sync: (maxResults = 20, method: "GET" | "POST" = "POST") =>
-      request<SyncResult>(`/emails/sync${buildQuery({ max_results: maxResults })}`, { method }),
+    sync: (options: SyncOptions = {}) => {
+      const {
+        maxResults = 20,
+        method = "POST",
+        includeCategories,
+        excludeCategories,
+      } = options;
+      return request<SyncResult>(
+        `/emails/sync${buildQuery({
+          max_results: maxResults,
+          include_categories: includeCategories?.join(","),
+          exclude_categories: excludeCategories?.join(","),
+        })}`,
+        { method }
+      );
+    },
     process: (data: ManualEmailInput) =>
       request<ProcessResult>("/emails/process", { method: "POST", body: JSON.stringify(data) }),
     batch: (emails: ManualEmailInput[]) =>

@@ -4,7 +4,12 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
-import { useAutoSync, SYNC_INTERVALS } from "@/hooks/useEmails";
+import {
+  DEFAULT_EXCLUDE_CATEGORIES,
+  DEFAULT_INCLUDE_CATEGORIES,
+  SYNC_INTERVALS,
+  useAutoSync,
+} from "@/hooks/useEmails";
 import { useDashboardState } from "@/hooks/useDashboardState";
 import { toast } from "@/components/ui/sonner";
 
@@ -27,7 +32,12 @@ const Header = () => {
 
   const handleManualSync = async () => {
     try {
-      const result = await syncMutation.mutateAsync({ maxResults: 20, method: "POST" });
+      const result = await syncMutation.mutateAsync({
+        maxResults: 20,
+        method: "POST",
+        includeCategories: [...DEFAULT_INCLUDE_CATEGORIES],
+        excludeCategories: [...DEFAULT_EXCLUDE_CATEGORIES],
+      });
       const count = result.synced ?? result.new_emails ?? result.total ?? result.added ?? 0;
       toast.success(`Sync complete: ${count} email(s) updated`);
     } catch (error) {
@@ -41,7 +51,9 @@ const Header = () => {
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-lg font-semibold text-foreground">{pageTitle}</h1>
-          <p className="text-xs text-muted-foreground">No scraping. Sync runs only through your secured backend API.</p>
+          <p className="text-xs text-muted-foreground">
+            Sync pulls only Primary/Updates and excludes Promotions/Social.
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
