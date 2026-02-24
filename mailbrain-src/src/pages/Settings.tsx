@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/sonner";
 import { api } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 import type { Profile } from "@/lib/types";
 
 const defaultProfile: Profile = {
@@ -19,6 +20,7 @@ const defaultProfile: Profile = {
 };
 
 const Settings = () => {
+  const { user } = useAuth();
   const profileQuery = useQuery({ queryKey: ["profile"], queryFn: api.profile.get });
   const healthQuery = useQuery({ queryKey: ["health"], queryFn: api.core.health });
   const debugQuery = useQuery({ queryKey: ["debug"], queryFn: api.core.debug });
@@ -44,6 +46,12 @@ const Settings = () => {
 
   return (
     <div className="space-y-6">
+      <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+        <h2 className="text-sm font-semibold">Account</h2>
+        <div className="text-xs text-muted-foreground">Email: {user?.email || "Not available"}</div>
+        <div className="text-xs text-muted-foreground">Name: {user?.name || "Not available"}</div>
+      </div>
+
       <div className="rounded-xl border border-border bg-card p-4 space-y-2">
         <h2 className="text-sm font-semibold">Backend Status</h2>
         <div className="text-xs text-muted-foreground">Health: {healthQuery.isLoading ? "loading" : JSON.stringify(healthQuery.data)}</div>
