@@ -51,6 +51,9 @@ type SyncOptions = {
   method?: "GET" | "POST";
   includeCategories?: string[];
   excludeCategories?: string[];
+  markAsRead?: boolean;
+  preserveImportantUnread?: boolean;
+  keepUnread?: boolean;
 };
 
 function buildQuery(params?: Record<string, string | number | boolean | undefined>): string {
@@ -125,18 +128,32 @@ export const api = {
         method = "POST",
         includeCategories,
         excludeCategories,
+        markAsRead = false,
+        preserveImportantUnread = true,
+        keepUnread = true,
       } = options;
       return request<SyncResult>(
         `/emails/sync${buildQuery({
           max_results: maxResults,
           include_categories: includeCategories?.join(","),
           exclude_categories: excludeCategories?.join(","),
+          mark_as_read: markAsRead,
+          preserve_important_unread: preserveImportantUnread,
+          keep_unread: keepUnread,
         })}`,
         { method }
       );
     },
     process: (data: ManualEmailInput) =>
-      request<ProcessResult>("/emails/process", { method: "POST", body: JSON.stringify(data) }),
+      request<ProcessResult>("/emails/process", {
+        method: "POST",
+        body: JSON.stringify({
+          ...data,
+          mark_as_read: data.mark_as_read ?? false,
+          keep_unread: data.keep_unread ?? true,
+          preserve_important_unread: data.preserve_important_unread ?? true,
+        }),
+      }),
     batch: (emails: ManualEmailInput[]) =>
       request<BatchResult>("/emails/batch", { method: "POST", body: JSON.stringify({ emails }) }),
     approve: (id: string) => request(`/emails/${id}/approve`, { method: "POST" }),

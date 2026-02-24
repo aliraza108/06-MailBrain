@@ -52,7 +52,7 @@ const Header = () => {
         <div>
           <h1 className="text-lg font-semibold text-foreground">{pageTitle}</h1>
           <p className="text-xs text-muted-foreground">
-            Sync pulls only Primary/Updates and excludes Promotions/Social.
+            Sync pulls only Primary/Updates, excludes Promotions/Social, and keeps important emails unread.
           </p>
         </div>
 

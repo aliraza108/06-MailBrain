@@ -10,6 +10,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/sonner";
 
+const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
+
+function getEmailDate(email: { received_at?: string; processed_at?: string }) {
+  const raw = email.received_at || email.processed_at;
+  if (!raw) return null;
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
+}
+
 const Dashboard = () => {
   const {
     selectedEmailId,
@@ -72,6 +82,14 @@ const Dashboard = () => {
     [overview.data]
   );
 
+  const recentEmails = useMemo(() => {
+    const cutoff = Date.now() - TEN_DAYS_MS;
+    return (emailsQuery.data?.emails || []).filter((email) => {
+      const dt = getEmailDate(email);
+      return dt ? dt.getTime() >= cutoff : false;
+    });
+  }, [emailsQuery.data?.emails]);
+
   return (
     <div className="space-y-6">
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -87,10 +105,10 @@ const Dashboard = () => {
         <div className="xl:col-span-1 rounded-xl border border-border bg-card p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold">Inbox List</h2>
-            <Badge variant="outline">{emailsQuery.data?.emails?.length ?? 0}</Badge>
+            <Badge variant="outline">{recentEmails.length}</Badge>
           </div>
           <div className="space-y-2 max-h-[460px] overflow-auto pr-1">
-            {(emailsQuery.data?.emails || []).map((email) => (
+            {recentEmails.map((email) => (
               <button
                 key={email.id}
                 onClick={() => setSelectedEmailId(email.id)}
@@ -98,11 +116,14 @@ const Dashboard = () => {
               >
                 <div className="text-xs text-muted-foreground truncate">{email.sender}</div>
                 <div className="font-medium text-sm truncate">{email.subject}</div>
+                <div className="text-xs text-muted-foreground">
+                  {getEmailDate(email)?.toLocaleString() || "No date"}
+                </div>
                 <div className="text-xs text-muted-foreground truncate">{email.intent || "unknown"}</div>
               </button>
             ))}
-            {!emailsQuery.data?.emails?.length && (
-              <div className="text-xs text-muted-foreground">No emails yet. Run sync to fetch from backend.</div>
+            {!recentEmails.length && (
+              <div className="text-xs text-muted-foreground">No emails from the last 10 days yet.</div>
             )}
           </div>
         </div>
@@ -120,6 +141,9 @@ const Dashboard = () => {
                 <div>
                   <div className="text-xs text-muted-foreground">Subject</div>
                   <div className="text-sm font-medium">{selectedEmailQuery.data.subject}</div>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Date: {getEmailDate(selectedEmailQuery.data)?.toLocaleString() || "No date"}
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground">Body</div>

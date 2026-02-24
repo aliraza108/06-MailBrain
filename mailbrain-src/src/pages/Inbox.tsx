@@ -6,6 +6,16 @@ import { useDashboardState } from "@/hooks/useDashboardState";
 import { useApproveReply, useEmailDetail, useEmails, useSendReply } from "@/hooks/useEmails";
 import { toast } from "@/components/ui/sonner";
 
+const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
+
+function getEmailDate(email: { received_at?: string; processed_at?: string }) {
+  const raw = email.received_at || email.processed_at;
+  if (!raw) return null;
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
+}
+
 const Inbox = () => {
   const {
     selectedEmailId,
@@ -38,9 +48,14 @@ const Inbox = () => {
 
   const filteredEmails = useMemo(() => {
     const list = emailsQuery.data?.emails || [];
-    if (!search.trim()) return list;
+    const cutoff = Date.now() - TEN_DAYS_MS;
+    const recent = list.filter((email) => {
+      const dt = getEmailDate(email);
+      return dt ? dt.getTime() >= cutoff : false;
+    });
+    if (!search.trim()) return recent;
     const term = search.toLowerCase();
-    return list.filter(
+    return recent.filter(
       (email) =>
         email.subject?.toLowerCase().includes(term) ||
         email.sender?.toLowerCase().includes(term) ||
@@ -80,6 +95,9 @@ const Inbox = () => {
               >
                 <div className="text-xs text-muted-foreground truncate">{email.sender}</div>
                 <div className="text-sm font-medium truncate">{email.subject}</div>
+                <div className="text-xs text-muted-foreground">
+                  {getEmailDate(email)?.toLocaleString() || "No date"}
+                </div>
                 <div className="text-xs text-muted-foreground">{email.intent || "Unknown"}</div>
               </button>
             ))}
@@ -97,6 +115,9 @@ const Inbox = () => {
           {detailQuery.data ? (
             <>
               <div className="text-xs text-muted-foreground">From: {detailQuery.data.sender}</div>
+              <div className="text-xs text-muted-foreground">
+                Date: {getEmailDate(detailQuery.data)?.toLocaleString() || "No date"}
+              </div>
               <div className="text-base font-semibold">{detailQuery.data.subject}</div>
               <div className="max-h-52 overflow-auto whitespace-pre-wrap text-sm border border-border rounded-lg p-3 bg-background">
                 {detailQuery.data.body || "No body found"}

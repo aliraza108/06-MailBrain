@@ -77,6 +77,9 @@ export interface ManualEmailInput {
   subject: string;
   body: string;
   thread_context?: string;
+  mark_as_read?: boolean;
+  keep_unread?: boolean;
+  preserve_important_unread?: boolean;
 }
 
 export interface ProcessResult {
