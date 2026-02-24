@@ -7,7 +7,6 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   DEFAULT_EXCLUDE_CATEGORIES,
   DEFAULT_INCLUDE_CATEGORIES,
-  SYNC_INTERVALS,
   useAutoSync,
 } from "@/hooks/useEmails";
 import { useDashboardState } from "@/hooks/useDashboardState";
@@ -60,17 +59,19 @@ const Header = () => {
           <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
             <span className="text-xs text-muted-foreground">Auto Sync</span>
             <Switch checked={syncEnabled} onCheckedChange={setSyncEnabled} />
-            <select
-              value={syncIntervalMs}
-              onChange={(event) => setSyncIntervalMs(Number(event.target.value))}
-              className="bg-transparent text-xs text-foreground outline-none"
-            >
-              {SYNC_INTERVALS.map((interval) => (
-                <option key={interval.ms} value={interval.ms}>
-                  {interval.label}
-                </option>
-              ))}
-            </select>
+            <input
+              type="number"
+              min={5}
+              step={1}
+              value={Math.max(1, Math.floor(syncIntervalMs / 1000))}
+              onChange={(event) => {
+                const seconds = Number(event.target.value);
+                if (!Number.isFinite(seconds)) return;
+                setSyncIntervalMs(Math.max(5, seconds) * 1000);
+              }}
+              className="w-20 rounded border border-border bg-background px-2 py-1 text-xs text-foreground outline-none"
+            />
+            <span className="text-xs text-muted-foreground">sec</span>
           </div>
 
           <Button onClick={handleManualSync} disabled={syncMutation.isPending} className="bg-primary hover:bg-primary/90 text-primary-foreground">
