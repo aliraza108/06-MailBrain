@@ -1,93 +1,76 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Loader2, Mail } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { api } from "@/lib/api";
-import { toast } from "@/components/ui/sonner";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
-import { useQueryClient } from "@tanstack/react-query";
+import { useAutoSync, SYNC_INTERVALS } from "@/hooks/useEmails";
+import { useDashboardState } from "@/hooks/useDashboardState";
+import { toast } from "@/components/ui/sonner";
 
 const titleMap: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/inbox": "Inbox",
-  "/process": "Process Email",
+  "/process": "AI Composer",
   "/analytics": "Analytics",
-  "/settings": "Settings",
+  "/settings": "Profile Settings",
 };
 
 const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
-  const [syncing, setSyncing] = useState(false);
-  const queryClient = useQueryClient();
+  const { logout } = useAuth();
+  const { syncEnabled, setSyncEnabled, syncIntervalMs, setSyncIntervalMs } = useDashboardState();
 
-  const pageTitle = useMemo(() => {
-    if (location.pathname.startsWith("/inbox/")) return "Email Detail";
-    return titleMap[location.pathname] || "KAIRO";
-  }, [location.pathname]);
+  const pageTitle = useMemo(() => titleMap[location.pathname] || "MailMind", [location.pathname]);
+  const syncMutation = useAutoSync(syncEnabled, syncIntervalMs, 20);
 
-  const handleSync = async () => {
-    setSyncing(true);
+  const handleManualSync = async () => {
     try {
-      const result = await api.emails.sync(20);
-      const count = result?.synced ?? result?.new_emails ?? result?.total ?? 0;
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["emails"] }),
-        queryClient.invalidateQueries({ queryKey: ["analytics"] }),
-      ]);
-      toast.success(`Synced ${count} new emails`);
+      const result = await syncMutation.mutateAsync({ maxResults: 20, method: "POST" });
+      const count = result.synced ?? result.new_emails ?? result.total ?? result.added ?? 0;
+      toast.success(`Sync complete: ${count} email(s) updated`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to sync";
-      toast.error(`Failed to sync: ${message}`);
-    } finally {
-      setSyncing(false);
+      toast.error(`Sync failed: ${message}`);
     }
   };
 
   return (
-    <header className="flex items-center justify-between border-b border-border bg-secondary px-6 py-4">
-      <div>
-        <h1 className="text-lg font-semibold text-foreground">{pageTitle}</h1>
-        <p className="text-xs text-muted-foreground">Your inbox, on autopilot.</p>
-      </div>
-      <div className="flex items-center gap-3">
-        <Button
-          className="bg-primary hover:bg-primary/90 text-primary-foreground"
-          onClick={handleSync}
-          disabled={syncing}
-        >
-          {syncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
-          Sync Gmail
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 rounded-full border border-border bg-card px-2 py-1">
-              <Avatar className="h-7 w-7">
-                <AvatarImage src={user?.picture} alt={user?.name || "User"} />
-                <AvatarFallback>{user?.name?.slice(0, 2).toUpperCase() || "KR"}</AvatarFallback>
-              </Avatar>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => navigate("/settings")}>Profile</DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                toast.success("Logged out");
-                logout();
-              }}
+    <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur px-4 md:px-6 py-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h1 className="text-lg font-semibold text-foreground">{pageTitle}</h1>
+          <p className="text-xs text-muted-foreground">No scraping. Sync runs only through your secured backend API.</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+            <span className="text-xs text-muted-foreground">Auto Sync</span>
+            <Switch checked={syncEnabled} onCheckedChange={setSyncEnabled} />
+            <select
+              value={syncIntervalMs}
+              onChange={(event) => setSyncIntervalMs(Number(event.target.value))}
+              className="bg-transparent text-xs text-foreground outline-none"
             >
-              Logout
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              {SYNC_INTERVALS.map((interval) => (
+                <option key={interval.ms} value={interval.ms}>
+                  {interval.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <Button onClick={handleManualSync} disabled={syncMutation.isPending} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            {syncMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+            Sync Emails
+          </Button>
+          <Button variant="outline" onClick={() => navigate("/settings")}>Profile</Button>
+          <Button variant="ghost" onClick={logout}>Logout</Button>
+        </div>
       </div>
     </header>
   );
 };
 
 export default Header;
-
-

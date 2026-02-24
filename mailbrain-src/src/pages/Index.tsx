@@ -9,6 +9,7 @@ import Testimonials from "@/components/Testimonials";
 import Pricing from "@/components/Pricing";
 import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
+import { setStoredToken } from "@/lib/api";
 
 const Index = () => {
   const location = useLocation();
@@ -17,7 +18,7 @@ const Index = () => {
     const params = new URLSearchParams(location.search);
     const tokenFromQuery = params.get("token");
     if (tokenFromQuery) {
-      localStorage.setItem("mailbrain_token", tokenFromQuery);
+      setStoredToken(tokenFromQuery, true);
       window.history.replaceState({}, "", "/");
     }
   }, [location.search]);
@@ -38,5 +39,3 @@ const Index = () => {
 };
 
 export default Index;
-
-

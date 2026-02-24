@@ -1,118 +1,148 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import FilterBar, { InboxFilters } from "@/components/inbox/FilterBar";
-import EmailList from "@/components/inbox/EmailList";
-import EmailDetailPanel from "@/components/inbox/EmailDetailPanel";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useDashboardState } from "@/hooks/useDashboardState";
+import { useApproveReply, useEmailDetail, useEmails, useSendReply } from "@/hooks/useEmails";
 import { toast } from "@/components/ui/sonner";
-import { useEmails } from "@/hooks/useEmails";
-import type { EmailListParams } from "@/lib/types";
-
-const PAGE_SIZE = 20;
 
 const Inbox = () => {
-  const [searchParams] = useSearchParams();
-  const [filters, setFilters] = useState<InboxFilters>({
-    priority: "ALL",
-    intent: "ALL",
-    status: "ALL",
-    search: "",
-  });
+  const {
+    selectedEmailId,
+    setSelectedEmailId,
+    intentFilter,
+    setIntentFilter,
+    priorityFilter,
+    setPriorityFilter,
+  } = useDashboardState();
+
   const [page, setPage] = useState(1);
-  const [selectedId, setSelectedId] = useState<string | undefined>();
-  const [panelOpen, setPanelOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [replyBody, setReplyBody] = useState("");
 
-  const queryParams: EmailListParams = useMemo(
-    () => ({
-      page,
-      page_size: PAGE_SIZE,
-      priority: filters.priority as EmailListParams["priority"],
-      intent: filters.intent,
-      status: filters.status,
-    }),
-    [page, filters.priority, filters.intent, filters.status]
-  );
-
-  const emailsQuery = useEmails(queryParams);
+  const emailsQuery = useEmails({
+    page,
+    page_size: 20,
+    intent: intentFilter,
+    priority: priorityFilter,
+  });
+  const detailQuery = useEmailDetail(selectedEmailId, Boolean(selectedEmailId));
+  const approveMutation = useApproveReply();
+  const sendReplyMutation = useSendReply();
 
   useEffect(() => {
-    if (emailsQuery.error) {
-      toast.error(`Failed to load emails: ${(emailsQuery.error as Error).message}`);
+    if (detailQuery.data?.generated_reply) {
+      setReplyBody(detailQuery.data.generated_reply);
     }
-  }, [emailsQuery.error]);
+  }, [detailQuery.data?.generated_reply]);
 
-  useEffect(() => {
-    const emailFromQuery = searchParams.get("email");
-    if (emailFromQuery) {
-      setSelectedId(emailFromQuery);
-      setPanelOpen(true);
-    }
-  }, [searchParams]);
-
-  const emails = emailsQuery.data?.emails || [];
-  const filtered = useMemo(() => {
-    if (!filters.search) return emails;
-    const term = filters.search.toLowerCase();
-    return emails.filter(
+  const filteredEmails = useMemo(() => {
+    const list = emailsQuery.data?.emails || [];
+    if (!search.trim()) return list;
+    const term = search.toLowerCase();
+    return list.filter(
       (email) =>
-        email.subject.toLowerCase().includes(term) || email.sender.toLowerCase().includes(term)
+        email.subject?.toLowerCase().includes(term) ||
+        email.sender?.toLowerCase().includes(term) ||
+        email.intent?.toLowerCase().includes(term)
     );
-  }, [emails, filters.search]);
-
-  const total = emailsQuery.data?.total ?? 0;
-  const showing = Math.min(page * PAGE_SIZE, total);
+  }, [emailsQuery.data?.emails, search]);
 
   return (
     <div className="space-y-6">
-      <FilterBar filters={filters} onChange={(next) => {
-        setFilters(next);
-        setPage(1);
-      }} />
-
-      <EmailList
-        emails={filtered}
-        loading={emailsQuery.isLoading}
-        onSelect={(id) => {
-          setSelectedId(id);
-          setPanelOpen(true);
-        }}
-      />
-
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div className="text-xs text-muted-foreground">
-          Showing {showing} of {total}
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            className="bg-card border border-border"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="secondary"
-            className="bg-card border border-border"
-            onClick={() => setPage((p) => p + 1)}
-            disabled={showing >= total}
-          >
-            Next
-          </Button>
-        </div>
+      <div className="rounded-xl border border-border bg-card p-4 flex flex-col md:flex-row gap-3">
+        <Input placeholder="Search subject/sender/intent" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <select className="rounded-md border border-border bg-background px-3 py-2 text-sm" value={intentFilter} onChange={(e) => setIntentFilter(e.target.value)}>
+          <option value="ALL">All intents</option>
+          <option value="JOB">Job</option>
+          <option value="PROPOSAL">Proposal</option>
+          <option value="SUPPORT">Support</option>
+          <option value="FOLLOW_UP">Follow up</option>
+        </select>
+        <select className="rounded-md border border-border bg-background px-3 py-2 text-sm" value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)}>
+          <option value="ALL">All priority</option>
+          <option value="CRITICAL">Critical</option>
+          <option value="HIGH">High</option>
+          <option value="NORMAL">Normal</option>
+          <option value="LOW">Low</option>
+        </select>
       </div>
 
-      <EmailDetailPanel
-        emailId={selectedId}
-        open={panelOpen}
-        onOpenChange={(open) => {
-          setPanelOpen(open);
-          if (!open) setSelectedId(undefined);
-        }}
-      />
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-1 rounded-xl border border-border bg-card p-4">
+          <h2 className="text-sm font-semibold mb-3">Inbox</h2>
+          <div className="space-y-2 max-h-[620px] overflow-auto pr-1">
+            {filteredEmails.map((email) => (
+              <button
+                key={email.id}
+                onClick={() => setSelectedEmailId(email.id)}
+                className={`w-full rounded-lg border p-3 text-left ${selectedEmailId === email.id ? "border-primary bg-primary/5" : "border-border hover:bg-secondary"}`}
+              >
+                <div className="text-xs text-muted-foreground truncate">{email.sender}</div>
+                <div className="text-sm font-medium truncate">{email.subject}</div>
+                <div className="text-xs text-muted-foreground">{email.intent || "Unknown"}</div>
+              </button>
+            ))}
+            {!filteredEmails.length && <div className="text-xs text-muted-foreground">No emails matched.</div>}
+          </div>
+          <div className="mt-4 flex items-center justify-between">
+            <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
+            <span className="text-xs text-muted-foreground">Page {page}</span>
+            <Button size="sm" variant="outline" onClick={() => setPage((p) => p + 1)} disabled={(emailsQuery.data?.emails?.length || 0) < 20}>Next</Button>
+          </div>
+        </div>
+
+        <div className="xl:col-span-2 rounded-xl border border-border bg-card p-4 space-y-3">
+          <h2 className="text-sm font-semibold">Email Detail + Reply</h2>
+          {detailQuery.data ? (
+            <>
+              <div className="text-xs text-muted-foreground">From: {detailQuery.data.sender}</div>
+              <div className="text-base font-semibold">{detailQuery.data.subject}</div>
+              <div className="max-h-52 overflow-auto whitespace-pre-wrap text-sm border border-border rounded-lg p-3 bg-background">
+                {detailQuery.data.body || "No body found"}
+              </div>
+              <Textarea value={replyBody} onChange={(e) => setReplyBody(e.target.value)} className="min-h-[180px]" />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  onClick={async () => {
+                    if (!detailQuery.data?.id) return;
+                    try {
+                      await sendReplyMutation.mutateAsync({ id: detailQuery.data.id, body: replyBody });
+                      toast.success("Reply sent successfully");
+                    } catch (error) {
+                      const message = error instanceof Error ? error.message : "Reply send failed";
+                      toast.error(message);
+                    }
+                  }}
+                  disabled={sendReplyMutation.isPending || !replyBody.trim()}
+                >
+                  Send Reply
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    if (!detailQuery.data?.id) return;
+                    try {
+                      await approveMutation.mutateAsync(detailQuery.data.id);
+                      toast.success("Approved and sent");
+                    } catch (error) {
+                      const message = error instanceof Error ? error.message : "Approval failed";
+                      toast.error(message);
+                    }
+                  }}
+                  disabled={approveMutation.isPending}
+                >
+                  Approve + Send
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="text-sm text-muted-foreground">Select an email from the list.</div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
 
 export default Inbox;
-

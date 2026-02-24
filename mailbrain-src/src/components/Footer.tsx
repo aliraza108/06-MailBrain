@@ -63,7 +63,7 @@ const Footer = () => {
           <motion.div variants={itemVariants}>
             <motion.img 
               src={logo} 
-              alt="KAIRO" 
+              alt="MailMind" 
               className="h-8 mb-4"
               whileHover={{ scale: 1.05 }}
             />
@@ -128,7 +128,7 @@ const Footer = () => {
           transition={{ delay: 0.5 }}
         >
           <p className="text-sm text-muted-foreground">
-            2025 KAIRO. All rights reserved.
+            2025 MailMind. All rights reserved.
           </p>
           <motion.p 
             className="text-sm text-muted-foreground"

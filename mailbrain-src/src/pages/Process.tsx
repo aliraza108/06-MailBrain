@@ -1,43 +1,142 @@
 import { useState } from "react";
-import EmailForm from "@/components/process/EmailForm";
-import AnalysisResult from "@/components/process/AnalysisResult";
-import SkeletonLoader from "@/components/ui/SkeletonLoader";
+import { useMutation } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
-import type { EmailDetail, ManualEmailInput, ProcessResult } from "@/lib/types";
 import { toast } from "@/components/ui/sonner";
 
-const Process = () => {
-  const [result, setResult] = useState<EmailDetail | null>(null);
-  const [loading, setLoading] = useState(false);
+const actions = [
+  "process",
+  "generate-reply",
+  "generate",
+  "generate-job",
+  "generate-proposal",
+  "generate-follow-up",
+  "generate-and-send",
+  "job-apply-send",
+  "proposal-send",
+  "send",
+  "generate-subjects",
+  "improve-draft",
+] as const;
 
-  const handleProcess = async (data: ManualEmailInput) => {
-    setLoading(true);
-    try {
-      const response = await api.emails.process(data);
-      const normalized = (response as ProcessResult).email ?? (response as EmailDetail);
-      if (!normalized) {
-        throw new Error("Unexpected response");
+type ActionType = (typeof actions)[number];
+
+const Process = () => {
+  const [action, setAction] = useState<ActionType>("process");
+  const [sender, setSender] = useState("");
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [to, setTo] = useState("");
+  const [conversationId, setConversationId] = useState("");
+  const [instruction, setInstruction] = useState("");
+  const [count, setCount] = useState(5);
+  const [resultText, setResultText] = useState("");
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      switch (action) {
+        case "process":
+          return api.emails.process({ sender, subject, body });
+        case "generate-reply":
+          return api.emails.generateReply({ subject, body, conversation_id: conversationId || undefined });
+        case "generate":
+          return api.emails.generate({ to, subject, body });
+        case "generate-job":
+          return api.emails.generateJob({ to, subject, body });
+        case "generate-proposal":
+          return api.emails.generateProposal({ to, subject, body });
+        case "generate-follow-up":
+          return api.emails.generateFollowUp({ to, subject, body });
+        case "generate-and-send":
+          return api.emails.generateAndSend({ to, subject, body });
+        case "job-apply-send":
+          return api.emails.jobApplySend({ to, subject, body });
+        case "proposal-send":
+          return api.emails.proposalSend({ to, subject, body });
+        case "send":
+          return api.emails.send({ to, subject, body });
+        case "generate-subjects":
+          return api.emails.generateSubjects({ context: body, count });
+        case "improve-draft":
+          return api.emails.improveDraft({ draft: body, instruction: instruction || undefined });
+        default:
+          return {};
       }
-      setResult(normalized);
-      toast.success(`Email analyzed: ${normalized.intent} detected`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to process email";
-      toast.error(`Failed to process: ${message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    onSuccess: (response) => {
+      const text = JSON.stringify(response, null, 2);
+      setResultText(text);
+      toast.success(`Action success: ${action}`);
+    },
+    onError: (error: Error) => {
+      setResultText(error.message);
+      toast.error(`Action failed: ${error.message}`);
+    },
+  });
 
   return (
     <div className="space-y-6">
-      <EmailForm onSubmit={handleProcess} loading={loading} />
-      {loading && (
-        <div className="space-y-3">
-          <SkeletonLoader className="h-8 w-48" />
-          <SkeletonLoader className="h-64 w-full" />
+      <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+        <h2 className="text-sm font-semibold">AI Generation and Sending Tools</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="md:col-span-1">
+            <label className="text-xs text-muted-foreground">Action</label>
+            <select
+              className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+              value={action}
+              onChange={(e) => setAction(e.target.value as ActionType)}
+            >
+              {actions.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">To / Sender</label>
+            <Input value={action === "process" ? sender : to} onChange={(e) => (action === "process" ? setSender(e.target.value) : setTo(e.target.value))} placeholder={action === "process" ? "customer@example.com" : "recipient@example.com"} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Subject</label>
+            <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject" />
+          </div>
         </div>
-      )}
-      {result && !loading && <AnalysisResult email={result} />}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-muted-foreground">Conversation ID (optional)</label>
+            <Input value={conversationId} onChange={(e) => setConversationId(e.target.value)} placeholder="thread / conversation id" />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Subject Count (for generate-subjects)</label>
+            <Input type="number" min={1} max={20} value={count} onChange={(e) => setCount(Number(e.target.value))} />
+          </div>
+        </div>
+
+        <div>
+          <label className="text-xs text-muted-foreground">Body / Context / Draft</label>
+          <Textarea className="min-h-[180px]" value={body} onChange={(e) => setBody(e.target.value)} placeholder="Paste email body or context" />
+        </div>
+
+        <div>
+          <label className="text-xs text-muted-foreground">Improve instruction (optional)</label>
+          <Input value={instruction} onChange={(e) => setInstruction(e.target.value)} placeholder="e.g. make it shorter and more formal" />
+        </div>
+
+        <Button onClick={() => mutation.mutate()} disabled={mutation.isPending} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+          {mutation.isPending ? "Running..." : "Run Action"}
+        </Button>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-4">
+        <h3 className="text-sm font-semibold mb-3">Result</h3>
+        <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-[480px] bg-background rounded-lg border border-border p-3">
+          {resultText || "Run an action to see output."}
+        </pre>
+      </div>
     </div>
   );
 };

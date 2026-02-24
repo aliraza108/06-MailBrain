@@ -37,7 +37,7 @@ const Navbar = () => {
             whileTap={{ scale: 0.95 }}
             className="flex items-center space-x-2"
           >
-            <img src={logo} alt="KAIRO" className="h-8 md:h-10" />
+            <img src={logo} alt="MailMind" className="h-8 md:h-10" />
           </motion.div>
 
           {/* Desktop Nav */}
@@ -77,7 +77,7 @@ const Navbar = () => {
               whileTap={{ scale: 0.95 }}
             >
               <Button asChild className="magnetic-hover bg-primary text-primary-foreground hover-glow">
-                <Link to="/login">Try KAIRO Free</Link>
+                <Link to="/login">Try MailMind Free</Link>
               </Button>
             </motion.div>
           </div>
@@ -139,7 +139,7 @@ const Navbar = () => {
               transition={{ delay: 0.4 }}
             >
               <Button asChild className="w-full bg-primary text-primary-foreground hover-glow">
-                <Link to="/login">Try KAIRO Free</Link>
+                <Link to="/login">Try MailMind Free</Link>
               </Button>
             </motion.div>
           </div>

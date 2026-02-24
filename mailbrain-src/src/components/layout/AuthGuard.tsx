@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getStoredToken, setStoredToken } from "@/lib/api";
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -15,18 +16,20 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tokenFromQuery = params.get("token");
+
     if (tokenFromQuery) {
-      localStorage.setItem("mailbrain_token", tokenFromQuery);
+      setStoredToken(tokenFromQuery, true);
       window.history.replaceState({}, "", location.pathname);
       setReady(true);
       return;
     }
 
-    const token = localStorage.getItem("mailbrain_token");
+    const token = getStoredToken();
     if (!token) {
       navigate("/login", { replace: true });
       return;
     }
+
     setReady(true);
   }, [location.pathname, location.search, navigate]);
 
@@ -46,5 +49,3 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
 };
 
 export default AuthGuard;
-
-

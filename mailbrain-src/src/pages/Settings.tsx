@@ -1,54 +1,78 @@
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/sonner";
 import { api } from "@/lib/api";
-import { useAuth } from "@/hooks/useAuth";
-import SkeletonLoader from "@/components/ui/SkeletonLoader";
+import type { Profile } from "@/lib/types";
+
+const defaultProfile: Profile = {
+  full_name: "",
+  role_title: "",
+  company_name: "",
+  writing_tone: "",
+  signature: "",
+  custom_system_prompt: "",
+  default_language: "en",
+};
 
 const Settings = () => {
-  const { user, isLoading, logout } = useAuth();
+  const profileQuery = useQuery({ queryKey: ["profile"], queryFn: api.profile.get });
+  const healthQuery = useQuery({ queryKey: ["health"], queryFn: api.core.health });
+  const debugQuery = useQuery({ queryKey: ["debug"], queryFn: api.core.debug });
+
+  const { register, handleSubmit, reset } = useForm<Profile>({ defaultValues: defaultProfile });
+
+  useEffect(() => {
+    if (profileQuery.data) {
+      reset({ ...defaultProfile, ...profileQuery.data });
+    }
+  }, [profileQuery.data, reset]);
+
+  const updateMutation = useMutation({
+    mutationFn: (payload: Profile) => api.profile.update(payload),
+    onSuccess: (result) => {
+      reset(result);
+      toast.success("Profile updated");
+    },
+    onError: (error: Error) => {
+      toast.error(`Update failed: ${error.message}`);
+    },
+  });
 
   return (
     <div className="space-y-6">
-      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
-        <div className="text-sm font-semibold text-foreground">Account</div>
-        {isLoading ? (
-          <SkeletonLoader className="h-16 w-full" />
-        ) : (
-          <div className="text-sm text-muted-foreground space-y-1">
-            <div>Name: {user?.name || "--"}</div>
-            <div>Email: {user?.email || "--"}</div>
-          </div>
-        )}
+      <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+        <h2 className="text-sm font-semibold">Backend Status</h2>
+        <div className="text-xs text-muted-foreground">Health: {healthQuery.isLoading ? "loading" : JSON.stringify(healthQuery.data)}</div>
+        <div className="text-xs text-muted-foreground">Debug: {debugQuery.isLoading ? "loading" : "available"}</div>
       </div>
 
-      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
-        <div className="text-sm font-semibold text-foreground">Gmail Connection</div>
-        <div className="text-sm text-muted-foreground">Connected account: {user?.email || "--"}</div>
-        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => (window.location.href = api.auth.googleLoginUrl())}>
-          Reconnect Gmail
-        </Button>
-      </div>
-
-      <div className="bg-card border border-border rounded-xl p-6 space-y-2">
-        <div className="text-sm font-semibold text-foreground">Automation Threshold</div>
-        <div className="text-xs text-muted-foreground">
-          KAIRO automatically sends replies when confidence exceeds 85%. Emails below this threshold are routed for review.
+      <form className="rounded-xl border border-border bg-card p-4 space-y-3" onSubmit={handleSubmit((values) => updateMutation.mutate(values))}>
+        <h2 className="text-sm font-semibold">Profile + Prompt Settings</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <Input placeholder="Full name" {...register("full_name")} />
+          <Input placeholder="Role title" {...register("role_title")} />
+          <Input placeholder="Company name" {...register("company_name")} />
+          <Input placeholder="Writing tone" {...register("writing_tone")} />
+          <Input placeholder="Signature" {...register("signature")} />
+          <Input placeholder="Default language" {...register("default_language")} />
         </div>
-      </div>
+        <Textarea className="min-h-[180px]" placeholder="Custom system prompt" {...register("custom_system_prompt")} />
+        <Button type="submit" disabled={updateMutation.isPending}>{updateMutation.isPending ? "Saving..." : "Save Profile"}</Button>
+      </form>
 
-      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
-        <div className="text-sm font-semibold text-foreground">Danger Zone</div>
-        <Button
-          variant="outline"
-          className="border-red-500/30 text-red-400 hover:bg-red-500/20"
-          onClick={() => logout()}
-        >
-          Disconnect Gmail & Logout
-        </Button>
+      <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+        <h2 className="text-sm font-semibold">Security</h2>
+        <p className="text-xs text-muted-foreground">
+          Token is attached as `Authorization: Bearer` for protected API calls. Email fetching is backend-driven and does not scrape external inboxes directly from the frontend.
+        </p>
+        <Button variant="outline" onClick={() => api.auth.logout()}>Logout</Button>
       </div>
     </div>
   );
 };
 
 export default Settings;
-
-

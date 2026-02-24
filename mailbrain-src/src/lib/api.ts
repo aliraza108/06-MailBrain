@@ -1,26 +1,49 @@
 import type {
+  AiDraftResponse,
+  AutomationStats,
   BatchResult,
+  DebugResponse,
   EmailDetail,
   EmailListParams,
   EmailListResponse,
   EscalationReport,
+  GenerateReplyPayload,
+  GenerateSubjectsPayload,
+  HealthResponse,
   IntentStats,
   ManualEmailInput,
   OverviewStats,
   PriorityStats,
   ProcessResult,
+  Profile,
+  SendEmailPayload,
   SyncResult,
   TrendsData,
-  AutomationStats,
   User,
+  ImproveDraftPayload,
 } from "@/lib/types";
-import { toast } from "@/components/ui/sonner";
 
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL || "https://06-mailbrain-api.vercel.app").replace(/\/+$/, "");
+const env = import.meta.env as Record<string, string | undefined>;
+const BASE_URL = (env.VITE_API_URL || env.VITE_API_BASE_URL || env.NEXT_PUBLIC_API_URL || "https://06-mailbrain-api.vercel.app").replace(/\/+$/, "");
+const TOKEN_KEY = "mailbrain_token";
 
-function getToken(): string | null {
+export function getStoredToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("mailbrain_token");
+  return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY);
+}
+
+export function setStoredToken(token: string, persist = true): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(TOKEN_KEY, token);
+  if (persist) {
+    localStorage.setItem(TOKEN_KEY, token);
+  }
+}
+
+export function clearStoredToken(): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(TOKEN_KEY);
 }
 
 function buildQuery(params?: Record<string, string | number | boolean | undefined>): string {
@@ -35,7 +58,7 @@ function buildQuery(params?: Record<string, string | number | boolean | undefine
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getToken();
+  const token = getStoredToken();
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers: {
@@ -46,9 +69,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
 
   if (res.status === 401) {
+    clearStoredToken();
     if (typeof window !== "undefined") {
-      toast.error("Session expired. Please login again.");
-      localStorage.removeItem("mailbrain_token");
       window.location.href = "/login";
     }
     throw new Error("Unauthorized");
@@ -56,7 +78,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({} as { detail?: string; message?: string }));
-    throw new Error(err.detail || err.message || "API Error");
+    throw new Error(err.detail || err.message || `API error (${res.status})`);
   }
 
   if (res.status === 204) {
@@ -71,34 +93,51 @@ export const api = {
     googleLoginUrl: () => `${BASE_URL}/auth/google`,
     me: () => request<User>("/auth/me"),
     logout: () => {
+      clearStoredToken();
       if (typeof window !== "undefined") {
-        localStorage.removeItem("mailbrain_token");
         window.location.href = "/login";
       }
     },
+  },
+  core: {
+    root: () => request<HealthResponse>("/"),
+    health: () => request<HealthResponse>("/health"),
+    debug: () => request<DebugResponse>("/debug"),
+  },
+  profile: {
+    get: () => request<Profile>("/profile"),
+    update: (payload: Profile) => request<Profile>("/profile", { method: "PUT", body: JSON.stringify(payload) }),
   },
   emails: {
     list: (params?: EmailListParams) =>
       request<EmailListResponse>(`/emails/${buildQuery(params as Record<string, string | number | boolean | undefined>)}`),
     get: (id: string) => request<EmailDetail>(`/emails/${id}`),
+    sync: (maxResults = 20, method: "GET" | "POST" = "POST") =>
+      request<SyncResult>(`/emails/sync${buildQuery({ max_results: maxResults })}`, { method }),
     process: (data: ManualEmailInput) =>
       request<ProcessResult>("/emails/process", { method: "POST", body: JSON.stringify(data) }),
-    sync: (max?: number) =>
-      request<SyncResult>(`/emails/sync${buildQuery({ max_results: max ?? 20 })}`, { method: "POST" }),
     batch: (emails: ManualEmailInput[]) =>
       request<BatchResult>("/emails/batch", { method: "POST", body: JSON.stringify({ emails }) }),
-    approveReply: (id: string) => request(`/emails/${id}/approve`, { method: "POST" }),
-    sendReply: (id: string, body: string) =>
-      request(`/emails/${id}/reply`, { method: "POST", body: JSON.stringify({ body }) }),
+    approve: (id: string) => request(`/emails/${id}/approve`, { method: "POST" }),
+    reply: (id: string, body: string) => request(`/emails/${id}/reply`, { method: "POST", body: JSON.stringify({ body }) }),
+    send: (payload: SendEmailPayload) => request("/emails/send", { method: "POST", body: JSON.stringify(payload) }),
+    generateReply: (payload: GenerateReplyPayload) => request<AiDraftResponse>("/emails/generate-reply", { method: "POST", body: JSON.stringify(payload) }),
+    generate: (payload: SendEmailPayload) => request<AiDraftResponse>("/emails/generate", { method: "POST", body: JSON.stringify(payload) }),
+    generateJob: (payload: SendEmailPayload) => request<AiDraftResponse>("/emails/generate/job", { method: "POST", body: JSON.stringify(payload) }),
+    generateProposal: (payload: SendEmailPayload) => request<AiDraftResponse>("/emails/generate/proposal", { method: "POST", body: JSON.stringify(payload) }),
+    generateFollowUp: (payload: SendEmailPayload) => request<AiDraftResponse>("/emails/generate/follow-up", { method: "POST", body: JSON.stringify(payload) }),
+    generateAndSend: (payload: SendEmailPayload) => request("/emails/generate-and-send", { method: "POST", body: JSON.stringify(payload) }),
+    jobApplySend: (payload: SendEmailPayload) => request("/emails/job-apply/send", { method: "POST", body: JSON.stringify(payload) }),
+    proposalSend: (payload: SendEmailPayload) => request("/emails/proposal/send", { method: "POST", body: JSON.stringify(payload) }),
+    generateSubjects: (payload: GenerateSubjectsPayload) => request<AiDraftResponse>("/emails/generate/subjects", { method: "POST", body: JSON.stringify(payload) }),
+    improveDraft: (payload: ImproveDraftPayload) => request<AiDraftResponse>("/emails/generate/improve", { method: "POST", body: JSON.stringify(payload) }),
   },
   analytics: {
-    overview: (days?: number) =>
-      request<OverviewStats>(`/analytics/overview${buildQuery({ days: days ?? 7 })}`),
-    intent: (days?: number) => request<IntentStats>(`/analytics/intent${buildQuery({ days: days ?? 30 })}`),
-    priority: (days?: number) => request<PriorityStats>(`/analytics/priority${buildQuery({ days: days ?? 7 })}`),
-    trends: (days?: number) => request<TrendsData>(`/analytics/trends${buildQuery({ days: days ?? 14 })}`),
+    overview: (days = 7) => request<OverviewStats>(`/analytics/overview${buildQuery({ days })}`),
+    intent: (days = 30) => request<IntentStats>(`/analytics/intent${buildQuery({ days })}`),
+    priority: (days = 7) => request<PriorityStats>(`/analytics/priority${buildQuery({ days })}`),
+    trends: (days = 14) => request<TrendsData>(`/analytics/trends${buildQuery({ days })}`),
     automation: () => request<AutomationStats>("/analytics/automation"),
-    escalations: (days?: number) =>
-      request<EscalationReport>(`/analytics/escalations${buildQuery({ days: days ?? 7 })}`),
+    escalations: (days = 7) => request<EscalationReport>(`/analytics/escalations${buildQuery({ days })}`),
   },
 };

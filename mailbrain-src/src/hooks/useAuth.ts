@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api, getStoredToken } from "@/lib/api";
 import type { User } from "@/lib/types";
 
 export function useAuth() {
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("mailbrain_token") : null;
+  const token = typeof window !== "undefined" ? getStoredToken() : null;
 
   const query = useQuery<User>({
     queryKey: ["auth", "me"],

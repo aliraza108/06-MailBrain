@@ -1,18 +1,18 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Inbox, MailPlus, BarChart3, Settings } from "lucide-react";
+import { BarChart3, Inbox, LayoutDashboard, MailPlus, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
+  { label: "Home", to: "/dashboard", icon: LayoutDashboard },
   { label: "Inbox", to: "/inbox", icon: Inbox },
-  { label: "Process", to: "/process", icon: MailPlus },
-  { label: "Analytics", to: "/analytics", icon: BarChart3 },
-  { label: "Settings", to: "/settings", icon: Settings },
+  { label: "AI", to: "/process", icon: MailPlus },
+  { label: "Stats", to: "/analytics", icon: BarChart3 },
+  { label: "Profile", to: "/settings", icon: Settings },
 ];
 
 const MobileNav = () => {
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border bg-secondary z-40">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur z-40">
       <div className="grid grid-cols-5">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -38,4 +38,3 @@ const MobileNav = () => {
 };
 
 export default MobileNav;
-

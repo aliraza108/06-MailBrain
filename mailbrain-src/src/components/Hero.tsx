@@ -126,7 +126,7 @@ const Hero = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
             >
-              Let KAIRO handle the rest.
+              Let MailMind handle the rest.
             </motion.span>
           </motion.h1>
 
@@ -135,7 +135,7 @@ const Hero = () => {
             variants={itemVariants}
             className="text-xl text-muted-foreground max-w-2xl mx-auto"
           >
-            Stop wasting time on emails. KAIRO drafts, replies, and manages
+            Stop wasting time on emails. MailMind drafts, replies, and manages
             your inbox intelligently - so you can focus on what matters.
           </motion.p>
 
@@ -153,7 +153,7 @@ const Hero = () => {
                 size="lg"
                 className="magnetic-hover bg-primary text-primary-foreground text-lg px-8 py-6 glow-effect hover-gradient-shift click-bounce"
               >
-                <Link to="/login">Try KAIRO Free</Link>
+                <Link to="/login">Try MailMind Free</Link>
               </Button>
             </motion.div>
             <motion.div

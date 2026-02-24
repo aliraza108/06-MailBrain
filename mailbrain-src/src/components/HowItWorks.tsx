@@ -7,7 +7,7 @@ const steps = [
     icon: Brain,
     title: "Understands your email tone",
     description:
-      "KAIRO analyzes your writing style and preferences to match your unique voice perfectly.",
+      "MailMind analyzes your writing style and preferences to match your unique voice perfectly.",
   },
   {
     icon: MessageSquare,

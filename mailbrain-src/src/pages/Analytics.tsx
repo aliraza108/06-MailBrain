@@ -1,130 +1,119 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/sonner";
-import TrendChart from "@/components/dashboard/TrendChart";
-import IntentDonut from "@/components/dashboard/IntentDonut";
-import PriorityChart from "@/components/analytics/PriorityChart";
-import AutomationPie from "@/components/analytics/AutomationPie";
-import DepartmentChart from "@/components/analytics/DepartmentChart";
-import ConfidenceChart from "@/components/analytics/ConfidenceChart";
-import SkeletonLoader from "@/components/ui/SkeletonLoader";
-import {
-  useAutomationStats,
-  useIntentStats,
-  useOverviewStats,
-  usePriorityStats,
-  useTrendStats,
-} from "@/hooks/useAnalytics";
+import { useAutomationStats, useEscalations, useIntentStats, useOverviewStats, usePriorityStats, useTrendStats } from "@/hooks/useAnalytics";
+import { Bar, BarChart, CartesianGrid, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-const ranges = [7, 14, 30];
+const dayRanges = [7, 14, 30];
 
 const Analytics = () => {
-  const [range, setRange] = useState(30);
-
-  const overview = useOverviewStats(range);
-  const trends = useTrendStats(range);
-  const intent = useIntentStats(range);
-  const priority = usePriorityStats(range);
+  const [days, setDays] = useState(14);
+  const overview = useOverviewStats(days);
+  const intent = useIntentStats(days);
+  const priority = usePriorityStats(days);
+  const trends = useTrendStats(days);
   const automation = useAutomationStats();
+  const escalations = useEscalations(days);
 
-  useEffect(() => {
-    if (overview.error) toast.error(`Failed to load overview: ${(overview.error as Error).message}`);
-  }, [overview.error]);
-  useEffect(() => {
-    if (trends.error) toast.error(`Failed to load trends: ${(trends.error as Error).message}`);
-  }, [trends.error]);
-  useEffect(() => {
-    if (intent.error) toast.error(`Failed to load intents: ${(intent.error as Error).message}`);
-  }, [intent.error]);
-  useEffect(() => {
-    if (priority.error) toast.error(`Failed to load priorities: ${(priority.error as Error).message}`);
-  }, [priority.error]);
-  useEffect(() => {
-    if (automation.error) toast.error(`Failed to load automation: ${(automation.error as Error).message}`);
-  }, [automation.error]);
-
-  const overviewCards = useMemo(() => {
-    const stats = overview.data;
-    const automationRate = stats?.automation_rate ?? 0;
-    const automationPercent = automationRate <= 1 ? automationRate * 100 : automationRate;
-    const avgConfidence = stats?.avg_confidence ?? 0;
-    const avgConfidencePercent = avgConfidence <= 1 ? avgConfidence * 100 : avgConfidence;
-    return [
-      { label: "Total Emails", value: stats?.total_emails ?? 0 },
-      { label: "Critical", value: stats?.critical_emails ?? 0 },
-      { label: "Auto-Replied", value: stats?.auto_replied ?? 0 },
-      { label: "Escalated", value: stats?.escalated ?? 0 },
-      { label: "Automation Rate", value: `${Math.round(automationPercent)}%` },
-      { label: "Avg Confidence", value: `${Math.round(avgConfidencePercent)}%` },
-    ];
-  }, [overview.data]);
+  const automationPie = useMemo(
+    () => (automation.data?.actions || []).map((item) => ({ name: item.action, value: item.count })),
+    [automation.data?.actions]
+  );
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">Overview</div>
+        <h2 className="text-sm font-semibold">Analytics Overview</h2>
         <div className="flex gap-2">
-          {ranges.map((value) => (
-            <Button
-              key={value}
-              size="sm"
-              variant="secondary"
-              className={value === range ? "bg-primary text-primary-foreground" : "bg-card border border-border"}
-              onClick={() => setRange(value)}
-            >
-              {value}d
+          {dayRanges.map((range) => (
+            <Button key={range} size="sm" variant={range === days ? "default" : "outline"} onClick={() => setDays(range)}>
+              {range}d
             </Button>
           ))}
         </div>
       </div>
 
-      {overview.isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, idx) => (
-            <SkeletonLoader key={idx} className="h-24 w-full" />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {overviewCards.map((card) => (
-            <div key={card.label} className="bg-card border border-border rounded-xl p-5">
-              <div className="text-xs text-muted-foreground">{card.label}</div>
-              <div className="text-2xl font-semibold text-foreground">{card.value}</div>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="rounded-xl border border-border bg-card p-4"><div className="text-xs text-muted-foreground">Total</div><div className="text-xl font-semibold">{overview.data?.total_emails ?? 0}</div></div>
+        <div className="rounded-xl border border-border bg-card p-4"><div className="text-xs text-muted-foreground">Critical</div><div className="text-xl font-semibold">{overview.data?.critical_emails ?? 0}</div></div>
+        <div className="rounded-xl border border-border bg-card p-4"><div className="text-xs text-muted-foreground">Auto Reply</div><div className="text-xl font-semibold">{overview.data?.auto_replied ?? 0}</div></div>
+        <div className="rounded-xl border border-border bg-card p-4"><div className="text-xs text-muted-foreground">Escalations</div><div className="text-xl font-semibold">{overview.data?.escalated ?? 0}</div></div>
+      </div>
 
-      <TrendChart data={trends.data?.points} loading={trends.isLoading} title={`Email Volume - Last ${range} Days`} />
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <IntentDonut data={intent.data?.intents} loading={intent.isLoading} title="Intent Distribution" />
-          <div className="bg-card border border-border rounded-xl p-4">
-            <div className="text-xs text-muted-foreground mb-2">Intent Breakdown</div>
-            <div className="space-y-2 text-sm text-muted-foreground">
-              {(intent.data?.intents || []).map((item) => (
-                <div key={item.intent} className="flex items-center justify-between">
-                  <span>{item.intent.replace(/_/g, " ")}</span>
-                  <span className="text-muted-foreground">{item.count}</span>
-                </div>
-              ))}
-              {!intent.data?.intents?.length && <div className="text-xs text-muted-foreground">No data.</div>}
-            </div>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="rounded-xl border border-border bg-card p-4">
+          <h3 className="text-sm font-semibold mb-3">Email Trends</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={trends.data?.points || []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="total" stroke="#0ea5e9" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </div>
-        <PriorityChart data={priority.data?.priorities} loading={priority.isLoading} title="Priority Heatmap" />
+
+        <div className="rounded-xl border border-border bg-card p-4">
+          <h3 className="text-sm font-semibold mb-3">Intent Distribution</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={intent.data?.intents || []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="intent" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="#22c55e" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AutomationPie data={automation.data} loading={automation.isLoading} />
-        <DepartmentChart data={automation.data?.departments} loading={automation.isLoading} />
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="rounded-xl border border-border bg-card p-4">
+          <h3 className="text-sm font-semibold mb-3">Priority Mix</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={priority.data?.priorities || []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="priority" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="count" fill="#f97316" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-4">
+          <h3 className="text-sm font-semibold mb-3">Automation Actions</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={automationPie} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label />
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
 
-      <ConfidenceChart data={automation.data?.confidence} loading={automation.isLoading} />
+      <div className="rounded-xl border border-border bg-card p-4">
+        <h3 className="text-sm font-semibold mb-3">Escalated Emails ({escalations.data?.count ?? 0})</h3>
+        <div className="space-y-2">
+          {(escalations.data?.emails || []).slice(0, 6).map((email) => (
+            <div key={email.id} className="rounded-lg border border-border px-3 py-2">
+              <div className="text-sm font-medium">{email.subject}</div>
+              <div className="text-xs text-muted-foreground">{email.sender}</div>
+            </div>
+          ))}
+          {!escalations.data?.emails?.length && <div className="text-xs text-muted-foreground">No escalations in selected range.</div>}
+        </div>
+      </div>
     </div>
   );
 };
 
 export default Analytics;
-

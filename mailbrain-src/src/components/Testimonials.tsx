@@ -8,7 +8,7 @@ const testimonials = [
     role: "Product Manager",
     company: "TechCorp",
     content:
-      "KAIRO has saved me at least 10 hours per week. The AI understands context perfectly and my emails sound exactly like me.",
+      "MailMind has saved me at least 10 hours per week. The AI understands context perfectly and my emails sound exactly like me.",
     rating: 5,
   },
   {
@@ -16,7 +16,7 @@ const testimonials = [
     role: "Founder",
     company: "StartupXYZ",
     content:
-      "Game changer for my startup. I can focus on building while KAIRO handles all my email correspondence intelligently.",
+      "Game changer for my startup. I can focus on building while MailMind handles all my email correspondence intelligently.",
     rating: 5,
   },
   {
@@ -94,7 +94,7 @@ const Testimonials = () => {
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
           >
-            See what our users have to say about their experience with KAIRO
+            See what our users have to say about their experience with MailMind
           </motion.p>
         </motion.div>
 
