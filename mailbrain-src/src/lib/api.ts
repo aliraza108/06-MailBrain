@@ -10,17 +10,19 @@ import type {
   GenerateReplyPayload,
   GenerateSubjectsPayload,
   HealthResponse,
+  ImproveDraftPayload,
   IntentStats,
+  JobApplyPayload,
   ManualEmailInput,
   OverviewStats,
   PriorityStats,
   ProcessResult,
   Profile,
+  ProposalPayload,
   SendEmailPayload,
   SyncResult,
   TrendsData,
   User,
-  ImproveDraftPayload,
 } from "@/lib/types";
 
 const env = import.meta.env as Record<string, string | undefined>;
@@ -190,12 +192,54 @@ export const api = {
     send: (payload: SendEmailPayload) => request("/emails/send", { method: "POST", body: JSON.stringify(payload) }),
     generateReply: (payload: GenerateReplyPayload) => request<AiDraftResponse>("/emails/generate-reply", { method: "POST", body: JSON.stringify(payload) }),
     generate: (payload: SendEmailPayload) => request<AiDraftResponse>("/emails/generate", { method: "POST", body: JSON.stringify(payload) }),
-    generateJob: (payload: SendEmailPayload) => request<AiDraftResponse>("/emails/generate/job", { method: "POST", body: JSON.stringify(payload) }),
-    generateProposal: (payload: SendEmailPayload) => request<AiDraftResponse>("/emails/generate/proposal", { method: "POST", body: JSON.stringify(payload) }),
+    generateJob: (payload: SendEmailPayload | JobApplyPayload) =>
+      request<AiDraftResponse>("/emails/generate/job", {
+        method: "POST",
+        body: JSON.stringify({
+          ...payload,
+          job_post_body: (payload as JobApplyPayload).job_post_body || payload.body,
+        }),
+      }),
+    generateProposal: (payload: SendEmailPayload | ProposalPayload) =>
+      request<AiDraftResponse>("/emails/generate/proposal", {
+        method: "POST",
+        body: JSON.stringify({
+          ...payload,
+          proposal_body:
+            (payload as ProposalPayload).proposal_body ||
+            (payload as ProposalPayload).proposal_post_body ||
+            payload.body,
+          proposal_post_body:
+            (payload as ProposalPayload).proposal_post_body ||
+            (payload as ProposalPayload).proposal_body ||
+            payload.body,
+        }),
+      }),
     generateFollowUp: (payload: SendEmailPayload) => request<AiDraftResponse>("/emails/generate/follow-up", { method: "POST", body: JSON.stringify(payload) }),
     generateAndSend: (payload: SendEmailPayload) => request("/emails/generate-and-send", { method: "POST", body: JSON.stringify(payload) }),
-    jobApplySend: (payload: SendEmailPayload) => request("/emails/job-apply/send", { method: "POST", body: JSON.stringify(payload) }),
-    proposalSend: (payload: SendEmailPayload) => request("/emails/proposal/send", { method: "POST", body: JSON.stringify(payload) }),
+    jobApplySend: (payload: SendEmailPayload | JobApplyPayload) =>
+      request("/emails/job-apply/send", {
+        method: "POST",
+        body: JSON.stringify({
+          ...payload,
+          job_post_body: (payload as JobApplyPayload).job_post_body || payload.body,
+        }),
+      }),
+    proposalSend: (payload: SendEmailPayload | ProposalPayload) =>
+      request("/emails/proposal/send", {
+        method: "POST",
+        body: JSON.stringify({
+          ...payload,
+          proposal_body:
+            (payload as ProposalPayload).proposal_body ||
+            (payload as ProposalPayload).proposal_post_body ||
+            payload.body,
+          proposal_post_body:
+            (payload as ProposalPayload).proposal_post_body ||
+            (payload as ProposalPayload).proposal_body ||
+            payload.body,
+        }),
+      }),
     generateSubjects: (payload: GenerateSubjectsPayload) => request<AiDraftResponse>("/emails/generate/subjects", { method: "POST", body: JSON.stringify(payload) }),
     improveDraft: (payload: ImproveDraftPayload) => request<AiDraftResponse>("/emails/generate/improve", { method: "POST", body: JSON.stringify(payload) }),
     delete: (id: string) => request(`/emails/${id}`, { method: "DELETE" }),

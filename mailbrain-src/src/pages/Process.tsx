@@ -63,7 +63,14 @@ const Process = () => {
       if (!jobTo.trim() || !jobSubject.trim() || !jobApplicationText.trim() || !resumeDriveLink.trim()) {
         throw new Error("Enter recipient, subject, job application text, and resume Google Drive link");
       }
-      return api.emails.generateJob({ to: jobTo.trim(), subject: jobSubject.trim(), body: buildJobBody() });
+      const body = buildJobBody();
+      return api.emails.generateJob({
+        to: jobTo.trim(),
+        subject: jobSubject.trim(),
+        body,
+        job_post_body: body,
+        resume_drive_link: sendReadyResumeLink,
+      });
     },
     onSuccess: (response) => {
       const draft = extractDraft(response);
@@ -80,7 +87,13 @@ const Process = () => {
         throw new Error("Recipient, subject and resume Google Drive link are required");
       }
       const body = jobDraft.trim() || buildJobBody();
-      return api.emails.jobApplySend({ to: jobTo.trim(), subject: jobSubject.trim(), body });
+      return api.emails.jobApplySend({
+        to: jobTo.trim(),
+        subject: jobSubject.trim(),
+        body,
+        job_post_body: body,
+        resume_drive_link: sendReadyResumeLink,
+      });
     },
     onSuccess: (response) => {
       setJobResultText(JSON.stringify(response, null, 2));
@@ -98,6 +111,8 @@ const Process = () => {
         to: proposalTo.trim(),
         subject: proposalSubject.trim(),
         body: proposalPostText.trim(),
+        proposal_body: proposalPostText.trim(),
+        proposal_post_body: proposalPostText.trim(),
       });
     },
     onSuccess: (response) => {
@@ -114,10 +129,13 @@ const Process = () => {
       if (!proposalTo.trim() || !proposalSubject.trim()) {
         throw new Error("Recipient and subject are required");
       }
+      const body = proposalDraft.trim() || proposalPostText.trim();
       return api.emails.proposalSend({
         to: proposalTo.trim(),
         subject: proposalSubject.trim(),
-        body: proposalDraft.trim() || proposalPostText.trim(),
+        body,
+        proposal_body: body,
+        proposal_post_body: body,
       });
     },
     onSuccess: (response) => {
@@ -181,6 +199,15 @@ const Process = () => {
             <Button onClick={() => jobGenerateMutation.mutate()} disabled={jobGenerateMutation.isPending}>Generate</Button>
             <Button variant="outline" onClick={() => jobSendMutation.mutate()} disabled={jobSendMutation.isPending}>Generate + Send</Button>
           </div>
+          <div className="rounded-lg border border-border bg-background p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Job Applier Result</h3>
+              <span className="text-[11px] text-muted-foreground">Latest response</span>
+            </div>
+            <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-[260px]">
+              {jobResultText || "Run Job Applier Generate or Generate + Send to see output."}
+            </pre>
+          </div>
         </TabsContent>
 
         <TabsContent value="proposal-sender" className="rounded-xl border border-border bg-card p-4 space-y-3">
@@ -192,6 +219,15 @@ const Process = () => {
           <div className="flex gap-2">
             <Button onClick={() => proposalGenerateMutation.mutate()} disabled={proposalGenerateMutation.isPending}>Generate</Button>
             <Button variant="outline" onClick={() => proposalSendMutation.mutate()} disabled={proposalSendMutation.isPending}>Generate + Send</Button>
+          </div>
+          <div className="rounded-lg border border-border bg-background p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Proposal Sender Result</h3>
+              <span className="text-[11px] text-muted-foreground">Latest response</span>
+            </div>
+            <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-[260px]">
+              {proposalResultText || "Run Proposal Sender Generate or Generate + Send to see output."}
+            </pre>
           </div>
         </TabsContent>
 
@@ -210,29 +246,17 @@ const Process = () => {
             <Button variant="outline" onClick={() => subjectIdeasMutation.mutate()} disabled={subjectIdeasMutation.isPending}>Subject Ideas</Button>
             <Button variant="secondary" onClick={() => improveDraftMutation.mutate()} disabled={improveDraftMutation.isPending}>Improve Draft</Button>
           </div>
+          <div className="rounded-lg border border-border bg-background p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-sm font-semibold">AI Generation Result</h3>
+              <span className="text-[11px] text-muted-foreground">Latest response</span>
+            </div>
+            <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-[260px]">
+              {aiResultText || "Run an AI Generation action to see output."}
+            </pre>
+          </div>
         </TabsContent>
       </Tabs>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="rounded-xl border border-border bg-card p-4">
-          <h3 className="text-sm font-semibold mb-3">AI Generation Result</h3>
-          <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-[420px] bg-background rounded-lg border border-border p-3">
-            {aiResultText || "Run an AI Generation action to see output."}
-          </pre>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <h3 className="text-sm font-semibold mb-3">Job Applier Result</h3>
-          <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-[420px] bg-background rounded-lg border border-border p-3">
-            {jobResultText || "Run Job Applier Generate or Generate + Send to see output."}
-          </pre>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <h3 className="text-sm font-semibold mb-3">Proposal Sender Result</h3>
-          <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-[420px] bg-background rounded-lg border border-border p-3">
-            {proposalResultText || "Run Proposal Sender Generate or Generate + Send to see output."}
-          </pre>
-        </div>
-      </div>
     </div>
   );
 };

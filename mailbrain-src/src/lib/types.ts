@@ -114,6 +114,16 @@ export interface SendEmailPayload {
   body: string;
 }
 
+export interface JobApplyPayload extends SendEmailPayload {
+  job_post_body?: string;
+  resume_drive_link?: string;
+}
+
+export interface ProposalPayload extends SendEmailPayload {
+  proposal_body?: string;
+  proposal_post_body?: string;
+}
+
 export interface ImproveDraftPayload {
   draft: string;
   instruction?: string;
