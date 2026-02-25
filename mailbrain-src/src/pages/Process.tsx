@@ -30,7 +30,9 @@ function extractDraft(response: unknown): string {
 }
 
 const Process = () => {
-  const [resultText, setResultText] = useState("");
+  const [aiResultText, setAiResultText] = useState("");
+  const [jobResultText, setJobResultText] = useState("");
+  const [proposalResultText, setProposalResultText] = useState("");
 
   const [jobTo, setJobTo] = useState("");
   const [jobSubject, setJobSubject] = useState("Application for the role");
@@ -66,7 +68,7 @@ const Process = () => {
     onSuccess: (response) => {
       const draft = extractDraft(response);
       setJobDraft(draft);
-      setResultText(JSON.stringify(response, null, 2));
+      setJobResultText(JSON.stringify(response, null, 2));
       toast.success("Job application draft generated");
     },
     onError: (error: Error) => toast.error(error.message),
@@ -81,7 +83,7 @@ const Process = () => {
       return api.emails.jobApplySend({ to: jobTo.trim(), subject: jobSubject.trim(), body });
     },
     onSuccess: (response) => {
-      setResultText(JSON.stringify(response, null, 2));
+      setJobResultText(JSON.stringify(response, null, 2));
       toast.success("Job application email sent");
     },
     onError: (error: Error) => toast.error(error.message),
@@ -101,7 +103,7 @@ const Process = () => {
     onSuccess: (response) => {
       const draft = extractDraft(response);
       setProposalDraft(draft);
-      setResultText(JSON.stringify(response, null, 2));
+      setProposalResultText(JSON.stringify(response, null, 2));
       toast.success("Proposal draft generated");
     },
     onError: (error: Error) => toast.error(error.message),
@@ -119,7 +121,7 @@ const Process = () => {
       });
     },
     onSuccess: (response) => {
-      setResultText(JSON.stringify(response, null, 2));
+      setProposalResultText(JSON.stringify(response, null, 2));
       toast.success("Proposal email sent");
     },
     onError: (error: Error) => toast.error(error.message),
@@ -130,7 +132,7 @@ const Process = () => {
     onSuccess: (response) => {
       const draft = extractDraft(response);
       setBestDraft(draft);
-      setResultText(JSON.stringify(response, null, 2));
+      setAiResultText(JSON.stringify(response, null, 2));
       toast.success("Follow-up generated");
     },
     onError: (error: Error) => toast.error(error.message),
@@ -141,7 +143,7 @@ const Process = () => {
     onSuccess: (response) => {
       const draft = extractDraft(response);
       setBestDraft(draft);
-      setResultText(JSON.stringify(response, null, 2));
+      setAiResultText(JSON.stringify(response, null, 2));
       toast.success("Subject ideas generated");
     },
     onError: (error: Error) => toast.error(error.message),
@@ -152,7 +154,7 @@ const Process = () => {
     onSuccess: (response) => {
       const draft = extractDraft(response);
       setBestDraft(draft);
-      setResultText(JSON.stringify(response, null, 2));
+      setAiResultText(JSON.stringify(response, null, 2));
       toast.success("Draft improved");
     },
     onError: (error: Error) => toast.error(error.message),
@@ -211,11 +213,25 @@ const Process = () => {
         </TabsContent>
       </Tabs>
 
-      <div className="rounded-xl border border-border bg-card p-4">
-        <h3 className="text-sm font-semibold mb-3">API Result</h3>
-        <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-[420px] bg-background rounded-lg border border-border p-3">
-          {resultText || "Run an action to see output."}
-        </pre>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="rounded-xl border border-border bg-card p-4">
+          <h3 className="text-sm font-semibold mb-3">AI Generation Result</h3>
+          <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-[420px] bg-background rounded-lg border border-border p-3">
+            {aiResultText || "Run an AI Generation action to see output."}
+          </pre>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <h3 className="text-sm font-semibold mb-3">Job Applier Result</h3>
+          <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-[420px] bg-background rounded-lg border border-border p-3">
+            {jobResultText || "Run Job Applier Generate or Generate + Send to see output."}
+          </pre>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <h3 className="text-sm font-semibold mb-3">Proposal Sender Result</h3>
+          <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-[420px] bg-background rounded-lg border border-border p-3">
+            {proposalResultText || "Run Proposal Sender Generate or Generate + Send to see output."}
+          </pre>
+        </div>
       </div>
     </div>
   );
