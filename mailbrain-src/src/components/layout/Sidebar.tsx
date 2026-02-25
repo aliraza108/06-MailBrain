@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { BarChart3, Brain, Inbox, LayoutDashboard, MailPlus, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -13,7 +13,7 @@ const navItems = [
 const Sidebar = () => {
   return (
     <aside className="hidden md:flex md:flex-col w-64 border-r border-border min-h-screen bg-gradient-to-b from-secondary to-background">
-      <div className="px-6 py-6 flex items-center gap-3">
+      <Link to="/dashboard" aria-label="Go to dashboard" className="px-6 py-6 flex items-center gap-3 hover:bg-card/40 transition-colors">
         <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center">
           <Brain className="h-5 w-5 text-primary" />
         </div>
@@ -21,7 +21,7 @@ const Sidebar = () => {
           <div className="text-sm font-semibold text-foreground">MailMind</div>
           <div className="text-xs text-muted-foreground">Email Operations Desk</div>
         </div>
-      </div>
+      </Link>
 
       <nav className="flex-1 px-4 space-y-1">
         {navItems.map((item) => {

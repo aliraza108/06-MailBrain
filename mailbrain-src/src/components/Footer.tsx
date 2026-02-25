@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Github, Twitter, Linkedin, Mail } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   const footerLinks = {
@@ -61,12 +62,11 @@ const Footer = () => {
         >
           {/* Brand */}
           <motion.div variants={itemVariants}>
-            <motion.img 
-              src={logo} 
-              alt="MailMind" 
-              className="h-8 mb-4"
-              whileHover={{ scale: 1.05 }}
-            />
+            <motion.div whileHover={{ scale: 1.05 }} className="mb-4 inline-block">
+              <Link to="/" aria-label="Go to landing page">
+                <img src={logo} alt="MailMind" className="h-8" />
+              </Link>
+            </motion.div>
             <p className="text-sm text-muted-foreground mb-6">
               Intelligent email automation for modern professionals.
             </p>

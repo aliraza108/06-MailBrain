@@ -37,7 +37,9 @@ const Navbar = () => {
             whileTap={{ scale: 0.95 }}
             className="flex items-center space-x-2"
           >
-            <img src={logo} alt="MailMind" className="h-8 md:h-10" />
+            <Link to="/" aria-label="Go to landing page">
+              <img src={logo} alt="MailMind" className="h-8 md:h-10" />
+            </Link>
           </motion.div>
 
           {/* Desktop Nav */}
