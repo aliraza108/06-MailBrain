@@ -67,6 +67,34 @@ function buildQuery(params?: Record<string, string | number | boolean | undefine
   return qs ? `?${qs}` : "";
 }
 
+function toErrorMessage(value: unknown): string {
+  if (typeof value === "string") return value;
+
+  if (Array.isArray(value)) {
+    const items = value.map((entry) => toErrorMessage(entry)).filter(Boolean);
+    return items.join("; ");
+  }
+
+  if (value && typeof value === "object") {
+    const entry = value as Record<string, unknown>;
+    const directMessage = entry.detail ?? entry.message ?? entry.msg;
+    if (typeof directMessage === "string") return directMessage;
+
+    const location = Array.isArray(entry.loc) ? entry.loc.join(".") : "";
+    const nestedMessage = typeof entry.msg === "string" ? entry.msg : typeof entry.message === "string" ? entry.message : "";
+    if (location && nestedMessage) return `${location}: ${nestedMessage}`;
+
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+
+  if (value == null) return "";
+  return String(value);
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getStoredToken();
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -87,8 +115,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({} as { detail?: string; message?: string }));
-    throw new Error(err.detail || err.message || `API error (${res.status})`);
+    const err = await res.json().catch(() => null);
+    const message = toErrorMessage(err);
+    throw new Error(message || `API error (${res.status})`);
   }
 
   if (res.status === 204) {
@@ -169,6 +198,7 @@ export const api = {
     proposalSend: (payload: SendEmailPayload) => request("/emails/proposal/send", { method: "POST", body: JSON.stringify(payload) }),
     generateSubjects: (payload: GenerateSubjectsPayload) => request<AiDraftResponse>("/emails/generate/subjects", { method: "POST", body: JSON.stringify(payload) }),
     improveDraft: (payload: ImproveDraftPayload) => request<AiDraftResponse>("/emails/generate/improve", { method: "POST", body: JSON.stringify(payload) }),
+    delete: (id: string) => request(`/emails/${id}`, { method: "DELETE" }),
   },
   analytics: {
     overview: (days = 7) => request<OverviewStats>(`/analytics/overview${buildQuery({ days })}`),

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useDashboardState } from "@/hooks/useDashboardState";
-import { useApproveReply, useEmailDetail, useEmails, useSendReply } from "@/hooks/useEmails";
+import { useApproveReply, useDeleteEmail, useEmailDetail, useEmails, useSendReply } from "@/hooks/useEmails";
 import { toast } from "@/components/ui/sonner";
 
 const PAGE_SIZE = 10;
@@ -39,6 +39,7 @@ const Inbox = () => {
   const detailQuery = useEmailDetail(selectedEmailId, Boolean(selectedEmailId));
   const approveMutation = useApproveReply();
   const sendReplyMutation = useSendReply();
+  const deleteEmailMutation = useDeleteEmail();
 
   useEffect(() => {
     if (detailQuery.data?.generated_reply) {
@@ -149,6 +150,26 @@ const Inbox = () => {
                   disabled={approveMutation.isPending}
                 >
                   Approve + Send
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={async () => {
+                    if (!detailQuery.data?.id) return;
+                    const confirmed = window.confirm("Delete this email permanently?");
+                    if (!confirmed) return;
+                    try {
+                      await deleteEmailMutation.mutateAsync(detailQuery.data.id);
+                      setSelectedEmailId("");
+                      setReplyBody("");
+                      toast.success("Email deleted");
+                    } catch (error) {
+                      const message = error instanceof Error ? error.message : "Delete failed";
+                      toast.error(message);
+                    }
+                  }}
+                  disabled={deleteEmailMutation.isPending}
+                >
+                  Delete Email
                 </Button>
               </div>
             </>

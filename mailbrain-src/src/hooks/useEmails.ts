@@ -117,6 +117,17 @@ export function useProcessEmail() {
   });
 }
 
+export function useDeleteEmail() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (emailId: string) => api.emails.delete(emailId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["emails"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics"] });
+    },
+  });
+}
+
 export function useGenerateReply() {
   return useMutation({ mutationFn: (payload: GenerateReplyPayload) => api.emails.generateReply(payload) });
 }

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useDashboardState } from "@/hooks/useDashboardState";
-import { useEmailDetail, useEmails, useGenerateReply, useSendEmail } from "@/hooks/useEmails";
+import { useDeleteEmail, useEmailDetail, useEmails, useGenerateReply, useSendEmail } from "@/hooks/useEmails";
 import { useOverviewStats } from "@/hooks/useAnalytics";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +41,7 @@ const Dashboard = () => {
 
   const generateReply = useGenerateReply();
   const sendEmail = useSendEmail();
+  const deleteEmail = useDeleteEmail();
 
   const processSelected = useMutation({
     mutationFn: () => {
@@ -174,6 +175,26 @@ const Dashboard = () => {
                     disabled={!selectedEmailId}
                   >
                     Approve + Send
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={async () => {
+                      if (!selectedEmailId) return;
+                      const confirmed = window.confirm("Delete this email permanently?");
+                      if (!confirmed) return;
+                      try {
+                        await deleteEmail.mutateAsync(selectedEmailId);
+                        setSelectedEmailId("");
+                        setDraft("");
+                        toast.success("Email deleted");
+                      } catch (error) {
+                        const message = error instanceof Error ? error.message : "Delete failed";
+                        toast.error(message);
+                      }
+                    }}
+                    disabled={!selectedEmailId || deleteEmail.isPending}
+                  >
+                    Delete Email
                   </Button>
                 </div>
               </div>
