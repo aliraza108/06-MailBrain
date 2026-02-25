@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/sonner";
 
-const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
 const PAGE_SIZE = 10;
 
 function getEmailDate(email: { received_at?: string; processed_at?: string }) {
@@ -79,13 +78,7 @@ const Dashboard = () => {
     [overview.data]
   );
 
-  const recentEmails = useMemo(() => {
-    const cutoff = Date.now() - TEN_DAYS_MS;
-    return (emailsQuery.data?.emails || []).filter((email) => {
-      const dt = getEmailDate(email);
-      return dt ? dt.getTime() >= cutoff : false;
-    });
-  }, [emailsQuery.data?.emails]);
+  const pageEmails = emailsQuery.data?.emails || [];
 
   return (
     <div className="space-y-6">
@@ -102,10 +95,10 @@ const Dashboard = () => {
         <div className="xl:col-span-1 rounded-xl border border-border bg-card p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold">Inbox List</h2>
-            <Badge variant="outline">{recentEmails.length}</Badge>
+            <Badge variant="outline">{pageEmails.length}</Badge>
           </div>
           <div className="space-y-2 max-h-[460px] overflow-auto pr-1">
-            {recentEmails.map((email) => (
+            {pageEmails.map((email) => (
               <button
                 key={email.id}
                 onClick={() => setSelectedEmailId(email.id)}
@@ -117,7 +110,7 @@ const Dashboard = () => {
                 <div className="text-xs text-muted-foreground truncate">{email.intent || "unknown"}</div>
               </button>
             ))}
-            {!recentEmails.length && <div className="text-xs text-muted-foreground">No emails from the last 10 days yet.</div>}
+            {!pageEmails.length && <div className="text-xs text-muted-foreground">No emails found for this page.</div>}
           </div>
           <div className="mt-3 flex items-center justify-between">
             <Button size="sm" variant="outline" onClick={() => setEmailPage((p) => Math.max(1, p - 1))} disabled={emailPage === 1}>

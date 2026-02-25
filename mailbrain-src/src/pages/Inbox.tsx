@@ -6,7 +6,6 @@ import { useDashboardState } from "@/hooks/useDashboardState";
 import { useApproveReply, useEmailDetail, useEmails, useSendReply } from "@/hooks/useEmails";
 import { toast } from "@/components/ui/sonner";
 
-const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
 const PAGE_SIZE = 10;
 
 function getEmailDate(email: { received_at?: string; processed_at?: string }) {
@@ -49,14 +48,9 @@ const Inbox = () => {
 
   const filteredEmails = useMemo(() => {
     const list = emailsQuery.data?.emails || [];
-    const cutoff = Date.now() - TEN_DAYS_MS;
-    const recent = list.filter((email) => {
-      const dt = getEmailDate(email);
-      return dt ? dt.getTime() >= cutoff : false;
-    });
-    if (!search.trim()) return recent;
+    if (!search.trim()) return list;
     const term = search.toLowerCase();
-    return recent.filter(
+    return list.filter(
       (email) =>
         email.subject?.toLowerCase().includes(term) ||
         email.sender?.toLowerCase().includes(term) ||
