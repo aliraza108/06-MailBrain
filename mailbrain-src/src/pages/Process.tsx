@@ -7,6 +7,66 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
 import { toast } from "@/components/ui/sonner";
 
+function formatValue(value: unknown): string {
+  if (value == null) return "-";
+  if (typeof value === "string") return value || "-";
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function ResultView({ result, emptyText }: { result: unknown; emptyText: string }) {
+  if (!result) {
+    return <div className="text-xs text-muted-foreground">{emptyText}</div>;
+  }
+
+  if (typeof result !== "object") {
+    return <div className="text-xs text-foreground whitespace-pre-wrap">{String(result)}</div>;
+  }
+
+  const payload = result as Record<string, unknown>;
+  const body =
+    payload.reply_body ??
+    payload.body ??
+    payload.draft ??
+    payload.generated_body ??
+    payload.generated_reply;
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+        <div className="rounded-md border border-border p-2">
+          <div className="text-[11px] text-muted-foreground">Subject</div>
+          <div className="text-foreground break-words">{formatValue(payload.subject)}</div>
+        </div>
+        <div className="rounded-md border border-border p-2">
+          <div className="text-[11px] text-muted-foreground">Model</div>
+          <div className="text-foreground break-words">{formatValue(payload.model)}</div>
+        </div>
+        <div className="rounded-md border border-border p-2">
+          <div className="text-[11px] text-muted-foreground">Message</div>
+          <div className="text-foreground break-words">{formatValue(payload.message)}</div>
+        </div>
+        <div className="rounded-md border border-border p-2">
+          <div className="text-[11px] text-muted-foreground">Conversation ID</div>
+          <div className="text-foreground break-words">{formatValue(payload.conversation_id)}</div>
+        </div>
+      </div>
+      <div className="rounded-md border border-border p-2">
+        <div className="text-[11px] text-muted-foreground mb-1">Generated Body</div>
+        <div className="text-xs text-foreground whitespace-pre-wrap break-words">{formatValue(body)}</div>
+      </div>
+      <details className="rounded-md border border-border p-2">
+        <summary className="cursor-pointer text-[11px] text-muted-foreground">Raw JSON</summary>
+        <pre className="mt-2 text-[11px] whitespace-pre-wrap overflow-auto max-h-[220px]">{JSON.stringify(result, null, 2)}</pre>
+      </details>
+    </div>
+  );
+}
+
 function toSendReadyGoogleDriveLink(link: string): string {
   const trimmed = link.trim();
   if (!trimmed) return "";
@@ -30,9 +90,9 @@ function extractDraft(response: unknown): string {
 }
 
 const Process = () => {
-  const [aiResultText, setAiResultText] = useState("");
-  const [jobResultText, setJobResultText] = useState("");
-  const [proposalResultText, setProposalResultText] = useState("");
+  const [aiResult, setAiResult] = useState<unknown>(null);
+  const [jobResult, setJobResult] = useState<unknown>(null);
+  const [proposalResult, setProposalResult] = useState<unknown>(null);
 
   const [jobTo, setJobTo] = useState("");
   const [jobSubject, setJobSubject] = useState("Application for the role");
@@ -75,7 +135,7 @@ const Process = () => {
     onSuccess: (response) => {
       const draft = extractDraft(response);
       setJobDraft(draft);
-      setJobResultText(JSON.stringify(response, null, 2));
+      setJobResult(response);
       toast.success("Job application draft generated");
     },
     onError: (error: Error) => toast.error(error.message),
@@ -96,7 +156,7 @@ const Process = () => {
       });
     },
     onSuccess: (response) => {
-      setJobResultText(JSON.stringify(response, null, 2));
+      setJobResult(response);
       toast.success("Job application email sent");
     },
     onError: (error: Error) => toast.error(error.message),
@@ -118,7 +178,7 @@ const Process = () => {
     onSuccess: (response) => {
       const draft = extractDraft(response);
       setProposalDraft(draft);
-      setProposalResultText(JSON.stringify(response, null, 2));
+      setProposalResult(response);
       toast.success("Proposal draft generated");
     },
     onError: (error: Error) => toast.error(error.message),
@@ -139,7 +199,7 @@ const Process = () => {
       });
     },
     onSuccess: (response) => {
-      setProposalResultText(JSON.stringify(response, null, 2));
+      setProposalResult(response);
       toast.success("Proposal email sent");
     },
     onError: (error: Error) => toast.error(error.message),
@@ -150,7 +210,7 @@ const Process = () => {
     onSuccess: (response) => {
       const draft = extractDraft(response);
       setBestDraft(draft);
-      setAiResultText(JSON.stringify(response, null, 2));
+      setAiResult(response);
       toast.success("Follow-up generated");
     },
     onError: (error: Error) => toast.error(error.message),
@@ -161,7 +221,7 @@ const Process = () => {
     onSuccess: (response) => {
       const draft = extractDraft(response);
       setBestDraft(draft);
-      setAiResultText(JSON.stringify(response, null, 2));
+      setAiResult(response);
       toast.success("Subject ideas generated");
     },
     onError: (error: Error) => toast.error(error.message),
@@ -172,7 +232,7 @@ const Process = () => {
     onSuccess: (response) => {
       const draft = extractDraft(response);
       setBestDraft(draft);
-      setAiResultText(JSON.stringify(response, null, 2));
+      setAiResult(response);
       toast.success("Draft improved");
     },
     onError: (error: Error) => toast.error(error.message),
@@ -197,16 +257,14 @@ const Process = () => {
           <Textarea value={jobDraft} onChange={(e) => setJobDraft(e.target.value)} placeholder="Generated draft" className="min-h-[140px]" />
           <div className="flex gap-2">
             <Button onClick={() => jobGenerateMutation.mutate()} disabled={jobGenerateMutation.isPending}>Generate</Button>
-            <Button variant="outline" onClick={() => jobSendMutation.mutate()} disabled={jobSendMutation.isPending}>Generate + Send</Button>
+            <Button variant="outline" onClick={() => jobSendMutation.mutate()} disabled={jobSendMutation.isPending}>Send Email</Button>
           </div>
           <div className="rounded-lg border border-border bg-background p-3">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="text-sm font-semibold">Job Applier Result</h3>
               <span className="text-[11px] text-muted-foreground">Latest response</span>
             </div>
-            <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-[260px]">
-              {jobResultText || "Run Job Applier Generate or Generate + Send to see output."}
-            </pre>
+            <ResultView result={jobResult} emptyText="Run Job Applier Generate or Send Email to see output." />
           </div>
         </TabsContent>
 
@@ -218,16 +276,14 @@ const Process = () => {
           <Textarea value={proposalDraft} onChange={(e) => setProposalDraft(e.target.value)} placeholder="Generated proposal draft" className="min-h-[140px]" />
           <div className="flex gap-2">
             <Button onClick={() => proposalGenerateMutation.mutate()} disabled={proposalGenerateMutation.isPending}>Generate</Button>
-            <Button variant="outline" onClick={() => proposalSendMutation.mutate()} disabled={proposalSendMutation.isPending}>Generate + Send</Button>
+            <Button variant="outline" onClick={() => proposalSendMutation.mutate()} disabled={proposalSendMutation.isPending}>Send Email</Button>
           </div>
           <div className="rounded-lg border border-border bg-background p-3">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="text-sm font-semibold">Proposal Sender Result</h3>
               <span className="text-[11px] text-muted-foreground">Latest response</span>
             </div>
-            <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-[260px]">
-              {proposalResultText || "Run Proposal Sender Generate or Generate + Send to see output."}
-            </pre>
+            <ResultView result={proposalResult} emptyText="Run Proposal Sender Generate or Send Email to see output." />
           </div>
         </TabsContent>
 
@@ -251,9 +307,7 @@ const Process = () => {
               <h3 className="text-sm font-semibold">AI Generation Result</h3>
               <span className="text-[11px] text-muted-foreground">Latest response</span>
             </div>
-            <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-[260px]">
-              {aiResultText || "Run an AI Generation action to see output."}
-            </pre>
+            <ResultView result={aiResult} emptyText="Run an AI Generation action to see output." />
           </div>
         </TabsContent>
       </Tabs>
