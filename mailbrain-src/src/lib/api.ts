@@ -28,6 +28,11 @@ import type {
 const env = import.meta.env as Record<string, string | undefined>;
 const BASE_URL = (env.VITE_API_URL || env.VITE_API_BASE_URL || env.NEXT_PUBLIC_API_URL || "https://07-mailbrain-api.vercel.app").replace(/\/+$/, "");
 const TOKEN_KEY = "mailbrain_token";
+const PROTECTED_ROUTES = ["/dashboard", "/inbox", "/process", "/analytics", "/settings", "/app"];
+
+function isProtectedRoute(pathname: string): boolean {
+  return PROTECTED_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
+}
 
 export function getStoredToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -111,7 +116,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (res.status === 401) {
     clearStoredToken();
     if (typeof window !== "undefined") {
-      window.location.href = "/login";
+      if (isProtectedRoute(window.location.pathname)) {
+        window.location.href = "/login";
+      }
     }
     throw new Error("Unauthorized");
   }

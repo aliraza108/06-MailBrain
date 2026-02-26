@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Download, Menu, X } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { Link } from "react-router-dom";
+import { getManualInstallHint, triggerInstallPrompt } from "@/lib/pwaInstall";
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [installHint, setInstallHint] = useState("");
 
   useEffect(() => {
     const handleScroll = () => {
@@ -18,6 +20,12 @@ const Navbar = () => {
   }, []);
 
   const navLinks = ["Features", "Integrations", "Pricing", "FAQ"];
+
+  const handleInstall = async () => {
+    const result = await triggerInstallPrompt();
+    if (result === "accepted" || result === "dismissed") return;
+    setInstallHint(getManualInstallHint());
+  };
 
   return (
     <motion.nav
@@ -60,6 +68,10 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
+            <Button variant="outline" size="sm" onClick={handleInstall}>
+              <Download className="mr-2 h-4 w-4" />
+              Install App
+            </Button>
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -131,6 +143,16 @@ const Navbar = () => {
               animate={{ opacity: mobileMenuOpen ? 1 : 0 }}
               transition={{ delay: 0.3 }}
             >
+              <Button variant="outline" className="w-full" onClick={handleInstall}>
+                <Download className="mr-2 h-4 w-4" />
+                Install App
+              </Button>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: mobileMenuOpen ? 1 : 0 }}
+              transition={{ delay: 0.35 }}
+            >
               <Button asChild variant="ghost" className="w-full">
                 <Link to="/login">Login</Link>
               </Button>
@@ -138,12 +160,13 @@ const Navbar = () => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: mobileMenuOpen ? 1 : 0 }}
-              transition={{ delay: 0.4 }}
+              transition={{ delay: 0.45 }}
             >
               <Button asChild className="w-full bg-primary text-primary-foreground hover-glow">
                 <Link to="/login">Try MailMind Free</Link>
               </Button>
             </motion.div>
+            {installHint && <p className="text-xs text-muted-foreground">{installHint}</p>}
           </div>
         </motion.div>
       </div>

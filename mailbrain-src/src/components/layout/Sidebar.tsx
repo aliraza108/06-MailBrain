@@ -1,6 +1,9 @@
 import { Link, NavLink } from "react-router-dom";
-import { BarChart3, Brain, Inbox, LayoutDashboard, MailPlus, Settings } from "lucide-react";
+import { BarChart3, Brain, Download, Inbox, LayoutDashboard, MailPlus, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { getManualInstallHint, triggerInstallPrompt } from "@/lib/pwaInstall";
+import { useState } from "react";
 
 const navItems = [
   { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
@@ -11,6 +14,14 @@ const navItems = [
 ];
 
 const Sidebar = () => {
+  const [installHint, setInstallHint] = useState("");
+
+  const handleInstall = async () => {
+    const result = await triggerInstallPrompt();
+    if (result === "accepted" || result === "dismissed") return;
+    setInstallHint(getManualInstallHint());
+  };
+
   return (
     <aside className="hidden md:flex md:flex-col w-64 border-r border-border min-h-screen bg-gradient-to-b from-secondary to-background">
       <Link to="/dashboard" aria-label="Go to dashboard" className="px-6 py-6 flex items-center gap-3 hover:bg-card/40 transition-colors">
@@ -46,7 +57,14 @@ const Sidebar = () => {
         })}
       </nav>
 
-      <div className="px-6 py-4 text-xs text-muted-foreground">MailMind AI assistant</div>
+      <div className="px-6 py-4 space-y-2">
+        <Button variant="outline" className="w-full" onClick={handleInstall}>
+          <Download className="mr-2 h-4 w-4" />
+          Install App
+        </Button>
+        {installHint && <p className="text-xs text-muted-foreground">{installHint}</p>}
+        <div className="text-xs text-muted-foreground">MailMind AI assistant</div>
+      </div>
     </aside>
   );
 };

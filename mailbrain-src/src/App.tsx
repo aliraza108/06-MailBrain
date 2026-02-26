@@ -14,6 +14,7 @@ import Settings from "./pages/Settings";
 import AuthGuard from "@/components/layout/AuthGuard";
 import AppLayout from "@/components/layout/AppLayout";
 import { DashboardStateProvider } from "@/hooks/useDashboardState";
+import AppInstallPrompt from "@/components/AppInstallPrompt";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => (
     <TooltipProvider>
       <Sonner />
       <BrowserRouter>
+        <AppInstallPrompt />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
