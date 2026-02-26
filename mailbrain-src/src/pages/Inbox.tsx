@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useDashboardState } from "@/hooks/useDashboardState";
 import { useApproveReply, useDeleteEmail, useEmailDetail, useEmails, useSendReply } from "@/hooks/useEmails";
 import { toast } from "@/components/ui/sonner";
+import { isImportantConversation, shouldBlockAutoReply } from "@/lib/emailClassifier";
 
 const PAGE_SIZE = 10;
 
@@ -58,6 +59,9 @@ const Inbox = () => {
         email.intent?.toLowerCase().includes(term)
     );
   }, [emailsQuery.data?.emails, search]);
+
+  const blockReply = shouldBlockAutoReply(detailQuery.data);
+  const importantConversation = isImportantConversation(detailQuery.data);
 
   return (
     <div className="space-y-6">
@@ -115,6 +119,16 @@ const Inbox = () => {
                 Date: {getEmailDate(detailQuery.data)?.toLocaleString() || "No date"}
               </div>
               <div className="text-base font-semibold">{detailQuery.data.subject}</div>
+              {blockReply && (
+                <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  Reply is blocked for likely newsletter/automated emails.
+                </div>
+              )}
+              {importantConversation && (
+                <div className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+                  Marked as important conversation (job/application style content).
+                </div>
+              )}
               <div className="max-h-52 overflow-auto whitespace-pre-wrap text-sm border border-border rounded-lg p-3 bg-background">
                 {detailQuery.data.body || "No body found"}
               </div>
@@ -131,7 +145,7 @@ const Inbox = () => {
                       toast.error(message);
                     }
                   }}
-                  disabled={sendReplyMutation.isPending || !replyBody.trim()}
+                  disabled={sendReplyMutation.isPending || !replyBody.trim() || blockReply}
                 >
                   Send Reply
                 </Button>
@@ -147,7 +161,7 @@ const Inbox = () => {
                       toast.error(message);
                     }
                   }}
-                  disabled={approveMutation.isPending}
+                  disabled={approveMutation.isPending || blockReply}
                 >
                   Approve + Send
                 </Button>

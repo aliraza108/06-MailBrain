@@ -20,7 +20,7 @@ export const SYNC_INTERVALS = [
 ] as const;
 
 export const DEFAULT_INCLUDE_CATEGORIES = ["primary", "updates"] as const;
-export const DEFAULT_EXCLUDE_CATEGORIES = ["promotions", "social"] as const;
+export const DEFAULT_EXCLUDE_CATEGORIES = ["promotions", "social", "forums"] as const;
 
 export function useEmails(params: EmailListParams) {
   return useQuery<EmailListResponse>({

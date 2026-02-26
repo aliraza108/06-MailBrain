@@ -1,7 +1,27 @@
+import { useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { api } from "@/lib/api";
+import { api, getStoredToken, setStoredToken } from "@/lib/api";
 
 const Login = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tokenFromQuery = params.get("token");
+    const token = tokenFromQuery || getStoredToken();
+
+    if (!token) return;
+
+    if (tokenFromQuery) {
+      setStoredToken(tokenFromQuery, true);
+      window.history.replaceState({}, "", location.pathname);
+    }
+
+    navigate("/dashboard", { replace: true });
+  }, [location.pathname, location.search, navigate]);
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 space-y-6 shadow-xl">
