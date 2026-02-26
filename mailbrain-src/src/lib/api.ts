@@ -158,9 +158,9 @@ export const api = {
   },
   emails: {
     list: (params?: EmailListParams) =>
-      request<EmailListResponse>(`/emails/${buildQuery(params as Record<string, string | number | boolean | undefined>)}`),
+      request<EmailListResponse>(`/emails${buildQuery(params as Record<string, string | number | boolean | undefined>)}`),
     get: (id: string) => request<EmailDetail>(`/emails/${id}`),
-    sync: (options: SyncOptions = {}) => {
+    sync: async (options: SyncOptions = {}) => {
       const {
         maxResults = 20,
         method = "POST",
@@ -170,17 +170,35 @@ export const api = {
         preserveImportantUnread = true,
         keepUnread = true,
       } = options;
-      return request<SyncResult>(
-        `/emails/sync${buildQuery({
-          max_results: maxResults,
-          include_categories: includeCategories?.join(","),
-          exclude_categories: excludeCategories?.join(","),
-          mark_as_read: markAsRead,
-          preserve_important_unread: preserveImportantUnread,
-          keep_unread: keepUnread,
-        })}`,
-        { method }
-      );
+      const queryPayload = {
+        max_results: maxResults,
+        include_categories: includeCategories?.join(","),
+        exclude_categories: excludeCategories?.join(","),
+        mark_as_read: markAsRead,
+        preserve_important_unread: preserveImportantUnread,
+        keep_unread: keepUnread,
+      };
+      const bodyPayload = {
+        max_results: maxResults,
+        include_categories: includeCategories,
+        exclude_categories: excludeCategories,
+        mark_as_read: markAsRead,
+        preserve_important_unread: preserveImportantUnread,
+        keep_unread: keepUnread,
+      };
+
+      if (method === "GET") {
+        return request<SyncResult>(`/emails/sync${buildQuery(queryPayload)}`, { method: "GET" });
+      }
+
+      try {
+        return await request<SyncResult>("/emails/sync", {
+          method: "POST",
+          body: JSON.stringify(bodyPayload),
+        });
+      } catch {
+        return request<SyncResult>(`/emails/sync${buildQuery(queryPayload)}`, { method: "POST" });
+      }
     },
     process: (data: ManualEmailInput) =>
       request<ProcessResult>("/emails/process", {
@@ -196,6 +214,8 @@ export const api = {
       request<BatchResult>("/emails/batch", { method: "POST", body: JSON.stringify({ emails }) }),
     approve: (id: string) => request(`/emails/${id}/approve`, { method: "POST" }),
     reply: (id: string, body: string) => request(`/emails/${id}/reply`, { method: "POST", body: JSON.stringify({ body }) }),
+    approveReply: (id: string) => request(`/emails/${id}/approve`, { method: "POST" }),
+    sendReply: (id: string, body: string) => request(`/emails/${id}/reply`, { method: "POST", body: JSON.stringify({ body }) }),
     send: (payload: SendEmailPayload) => request("/emails/send", { method: "POST", body: JSON.stringify(payload) }),
     generateReply: (payload: GenerateReplyPayload) => request<AiDraftResponse>("/emails/generate-reply", { method: "POST", body: JSON.stringify(payload) }),
     generate: (payload: SendEmailPayload) => request<AiDraftResponse>("/emails/generate", { method: "POST", body: JSON.stringify(payload) }),
