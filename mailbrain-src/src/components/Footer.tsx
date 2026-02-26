@@ -1,9 +1,66 @@
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Github, Twitter, Linkedin, Mail } from "lucide-react";
+import { Github, Twitter, Linkedin, Mail, Download, X } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+}
 
 const Footer = () => {
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [installHidden, setInstallHidden] = useState(false);
+  const [manualHint, setManualHint] = useState("");
+
+  const dismissedKey = "mailbrain_install_popup_dismissed_at";
+
+  const isStandalone = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    const nav = window.navigator as Navigator & { standalone?: boolean };
+    return window.matchMedia("(display-mode: standalone)").matches || Boolean(nav.standalone);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const dismissedAt = Number(localStorage.getItem(dismissedKey) || 0);
+    const recentlyDismissed = Date.now() - dismissedAt < 3 * 24 * 60 * 60 * 1000;
+    if (recentlyDismissed) setInstallHidden(true);
+
+    const onBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setDeferredPrompt(event as BeforeInstallPromptEvent);
+    };
+
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    return () => window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+  }, []);
+
+  const closeInstallPopup = () => {
+    setInstallHidden(true);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(dismissedKey, String(Date.now()));
+    }
+  };
+
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      await deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if (choice.outcome === "accepted") {
+        setInstallHidden(true);
+      }
+      setDeferredPrompt(null);
+      return;
+    }
+
+    setManualHint("On mobile, open browser menu and tap 'Add to Home Screen'.");
+  };
+
+  const showInstallPopup = !installHidden && !isStandalone && (Boolean(deferredPrompt) || Boolean(manualHint));
+
   const footerLinks = {
     Product: ["Features", "Integrations", "Pricing", "FAQ"],
     Company: ["About", "Blog", "Careers", "Contact"],
@@ -70,6 +127,13 @@ const Footer = () => {
             <p className="text-sm text-muted-foreground mb-6">
               Intelligent email automation for modern professionals.
             </p>
+            <div className="mb-4">
+              <Button onClick={handleInstall} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Download className="mr-2 h-4 w-4" />
+                Download App
+              </Button>
+              {manualHint && <p className="mt-2 text-xs text-muted-foreground">{manualHint}</p>}
+            </div>
             <div className="flex gap-4">
               {socialLinks.map((social, index) => (
                 <motion.a
@@ -141,6 +205,31 @@ const Footer = () => {
           </motion.p>
         </motion.div>
       </div>
+
+      {showInstallPopup && (
+        <div className="fixed bottom-4 right-4 z-50 w-[calc(100%-2rem)] max-w-sm rounded-xl border border-border bg-background/95 backdrop-blur p-4 shadow-xl">
+          <button
+            onClick={closeInstallPopup}
+            className="absolute right-2 top-2 text-muted-foreground hover:text-foreground"
+            aria-label="Close install popup"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <p className="text-sm font-semibold text-foreground">Install MailMind App</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Add MailMind to your home screen for faster access like a mobile app.
+          </p>
+          <div className="mt-3 flex gap-2">
+            <Button size="sm" onClick={handleInstall} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Download className="mr-2 h-4 w-4" />
+              Install
+            </Button>
+            <Button size="sm" variant="outline" onClick={closeInstallPopup}>
+              Not now
+            </Button>
+          </div>
+        </div>
+      )}
     </footer>
   );
 };
