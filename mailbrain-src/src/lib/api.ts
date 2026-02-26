@@ -102,6 +102,27 @@ function toErrorMessage(value: unknown): string {
   return String(value);
 }
 
+function extractEmailAddress(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  const angleMatch = trimmed.match(/<([^<>@\s]+@[^<>@\s]+\.[^<>@\s]+)>/);
+  if (angleMatch?.[1]) return angleMatch[1].trim();
+
+  return trimmed;
+}
+
+function shouldTryAlternateSendVariant(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return (
+    message.includes("422") ||
+    message.includes("validation") ||
+    message.includes("body") ||
+    message.includes("field required")
+  );
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getStoredToken();
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -213,10 +234,40 @@ export const api = {
     batch: (emails: ManualEmailInput[]) =>
       request<BatchResult>("/emails/batch", { method: "POST", body: JSON.stringify({ emails }) }),
     approve: (id: string) => request(`/emails/${id}/approve`, { method: "POST" }),
-    reply: (id: string, body: string) => request(`/emails/${id}/reply`, { method: "POST", body: JSON.stringify({ body }) }),
+    reply: async (id: string, body: string) => {
+      const trimmedBody = body.trim();
+      try {
+        return await request(`/emails/${id}/reply`, { method: "POST", body: JSON.stringify({ body: trimmedBody }) });
+      } catch (error) {
+        if (!shouldTryAlternateSendVariant(error)) throw error;
+        return request(`/emails/${id}/reply`, { method: "POST", body: JSON.stringify({ body: trimmedBody, reply_body: trimmedBody }) });
+      }
+    },
     approveReply: (id: string) => request(`/emails/${id}/approve`, { method: "POST" }),
-    sendReply: (id: string, body: string) => request(`/emails/${id}/reply`, { method: "POST", body: JSON.stringify({ body }) }),
-    send: (payload: SendEmailPayload) => request("/emails/send", { method: "POST", body: JSON.stringify(payload) }),
+    sendReply: async (id: string, body: string) => {
+      const trimmedBody = body.trim();
+      try {
+        return await request(`/emails/${id}/reply`, { method: "POST", body: JSON.stringify({ body: trimmedBody }) });
+      } catch (error) {
+        if (!shouldTryAlternateSendVariant(error)) throw error;
+        return request(`/emails/${id}/reply`, { method: "POST", body: JSON.stringify({ body: trimmedBody, reply_body: trimmedBody }) });
+      }
+    },
+    send: async (payload: SendEmailPayload) => {
+      const normalizedPayload = { ...payload, to: extractEmailAddress(payload.to) };
+      try {
+        return await request("/emails/send", { method: "POST", body: JSON.stringify(normalizedPayload) });
+      } catch (error) {
+        if (!shouldTryAlternateSendVariant(error)) throw error;
+        return request("/emails/send", {
+          method: "POST",
+          body: JSON.stringify({
+            ...normalizedPayload,
+            text: normalizedPayload.body,
+          }),
+        });
+      }
+    },
     generateReply: (payload: GenerateReplyPayload) => request<AiDraftResponse>("/emails/generate-reply", { method: "POST", body: JSON.stringify(payload) }),
     generate: (payload: SendEmailPayload) => request<AiDraftResponse>("/emails/generate", { method: "POST", body: JSON.stringify(payload) }),
     generateJob: (payload: SendEmailPayload | JobApplyPayload) =>
