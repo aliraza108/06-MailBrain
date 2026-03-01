@@ -77,7 +77,7 @@ const Footer = () => {
           <motion.div variants={itemVariants}>
             <motion.div whileHover={{ scale: 1.05 }} className="mb-4 inline-block">
               <Link to="/" aria-label="Go to landing page">
-                <img src={logo} alt="MailMind" className="h-8" />
+                <img src={logo} alt="Kairo Form" className="h-8" />
               </Link>
             </motion.div>
             <p className="text-sm text-muted-foreground mb-6">
@@ -148,7 +148,7 @@ const Footer = () => {
           transition={{ delay: 0.5 }}
         >
           <p className="text-sm text-muted-foreground">
-            2025 MailMind. All rights reserved.
+            2025 Kairo Form. All rights reserved.
           </p>
           <motion.p 
             className="text-sm text-muted-foreground"

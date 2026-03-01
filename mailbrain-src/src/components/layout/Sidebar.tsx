@@ -29,7 +29,7 @@ const Sidebar = () => {
           <Brain className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <div className="text-sm font-semibold text-foreground">MailMind</div>
+          <div className="text-sm font-semibold text-foreground">Kairo Form</div>
           <div className="text-xs text-muted-foreground">Email Operations Desk</div>
         </div>
       </Link>
@@ -63,7 +63,7 @@ const Sidebar = () => {
           Install App
         </Button>
         {installHint && <p className="text-xs text-muted-foreground">{installHint}</p>}
-        <div className="text-xs text-muted-foreground">MailMind AI assistant</div>
+        <div className="text-xs text-muted-foreground">Kairo Form AI assistant</div>
       </div>
     </aside>
   );

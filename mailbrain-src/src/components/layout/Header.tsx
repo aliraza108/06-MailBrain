@@ -36,7 +36,7 @@ const Header = () => {
   const [syncUnit, setSyncUnit] = useState<SyncUnit>("sec");
   const [syncValue, setSyncValue] = useState<number>(Math.max(5, Math.floor(syncIntervalMs / 1000)));
 
-  const pageTitle = useMemo(() => titleMap[location.pathname] || "MailMind", [location.pathname]);
+  const pageTitle = useMemo(() => titleMap[location.pathname] || "Kairo Form", [location.pathname]);
   const syncMutation = useAutoSync(syncEnabled, syncIntervalMs, 20);
 
   useEffect(() => {

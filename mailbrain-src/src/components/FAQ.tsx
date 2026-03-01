@@ -8,9 +8,9 @@ import {
 
 const faqs = [
   {
-    question: "How does MailMind understand my writing style?",
+    question: "How does Kairo Form understand my writing style?",
     answer:
-      "MailMind uses advanced AI to analyze your previous emails and learn your unique tone, vocabulary, and communication patterns. The more you use it, the better it gets at matching your style.",
+      "Kairo Form uses advanced AI to analyze your previous emails and learn your unique tone, vocabulary, and communication patterns. The more you use it, the better it gets at matching your style.",
   },
   {
     question: "Is my email data secure?",
@@ -18,7 +18,7 @@ const faqs = [
       "Absolutely. We use enterprise-grade encryption and never store your emails permanently. All processing happens in real-time, and your data is protected with industry-standard security measures.",
   },
   {
-    question: "Can I use MailMind with multiple email accounts?",
+    question: "Can I use Kairo Form with multiple email accounts?",
     answer:
       "Yes! Professional and Enterprise plans support multiple email accounts across different providers including Gmail, Outlook, and more.",
   },
@@ -94,7 +94,7 @@ const FAQ = () => {
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
           >
-            Everything you need to know about MailMind
+            Everything you need to know about Kairo Form
           </motion.p>
         </motion.div>
 

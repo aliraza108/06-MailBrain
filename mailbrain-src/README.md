@@ -1,4 +1,4 @@
-# MailMind Frontend
+# Kairo Form Frontend
 
 Production-ready React frontend for the MailBrain FastAPI backend.
 

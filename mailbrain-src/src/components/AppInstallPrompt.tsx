@@ -65,7 +65,7 @@ const AppInstallPrompt = () => {
       >
         <X className="h-4 w-4" />
       </button>
-      <p className="text-sm font-semibold text-foreground">Install MailMind App</p>
+      <p className="text-sm font-semibold text-foreground">Install Kairo Form App</p>
       <p className="mt-1 text-xs text-muted-foreground">
         Install on your phone for app-like access from your home screen.
       </p>
