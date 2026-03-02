@@ -37,7 +37,7 @@ const Header = () => {
   const [syncValue, setSyncValue] = useState<number>(Math.max(5, Math.floor(syncIntervalMs / 1000)));
 
   const pageTitle = useMemo(() => titleMap[location.pathname] || "Kairo Form", [location.pathname]);
-  const syncMutation = useAutoSync(syncEnabled, syncIntervalMs, 20);
+  const syncMutation = useAutoSync(syncEnabled, syncIntervalMs, 50);
 
   useEffect(() => {
     const next = Math.round(syncIntervalMs / UNIT_TO_MS[syncUnit]);
@@ -47,7 +47,7 @@ const Header = () => {
   const handleManualSync = async () => {
     try {
       const result = await syncMutation.mutateAsync({
-        maxResults: 20,
+        maxResults: 50,
         method: "POST",
         includeCategories: [...DEFAULT_INCLUDE_CATEGORIES],
         excludeCategories: [...DEFAULT_EXCLUDE_CATEGORIES],

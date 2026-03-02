@@ -26,7 +26,11 @@ import type {
 } from "@/lib/types";
 
 const env = import.meta.env as Record<string, string | undefined>;
-const BASE_URL = (env.VITE_API_URL || env.VITE_API_BASE_URL || env.NEXT_PUBLIC_API_URL || "https://07-mailbrain-api.vercel.app").replace(/\/+$/, "");
+const configuredBaseUrl = env.VITE_API_URL || env.VITE_API_BASE_URL || env.NEXT_PUBLIC_API_URL;
+const isLocalHost =
+  typeof window !== "undefined" &&
+  ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+const BASE_URL = (configuredBaseUrl || (isLocalHost ? "http://localhost:8000" : "https://07-mailbrain-api.vercel.app")).replace(/\/+$/, "");
 const TOKEN_KEY = "mailbrain_token";
 const PROTECTED_ROUTES = ["/dashboard", "/inbox", "/process", "/analytics", "/settings", "/app"];
 
@@ -61,6 +65,10 @@ type SyncOptions = {
   markAsRead?: boolean;
   preserveImportantUnread?: boolean;
   keepUnread?: boolean;
+};
+
+type RequestOptions = RequestInit & {
+  timeoutMs?: number;
 };
 
 function buildQuery(params?: Record<string, string | number | boolean | undefined>): string {
@@ -123,16 +131,33 @@ function shouldTryAlternateSendVariant(error: unknown): boolean {
   );
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const { timeoutMs = 15_000, ...fetchOptions } = options;
+  const shouldUseTimeout = !fetchOptions.signal && timeoutMs > 0;
+  const timeoutController = shouldUseTimeout ? new AbortController() : null;
+  const timeoutId = timeoutController
+    ? globalThis.setTimeout(() => timeoutController.abort(), timeoutMs)
+    : null;
   const token = getStoredToken();
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      ...fetchOptions,
+      signal: fetchOptions.signal ?? timeoutController?.signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...fetchOptions.headers,
+      },
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("Request timed out. Please retry.");
+    }
+    throw error;
+  } finally {
+    if (timeoutId) globalThis.clearTimeout(timeoutId);
+  }
 
   if (res.status === 401) {
     clearStoredToken();
@@ -183,7 +208,7 @@ export const api = {
     get: (id: string) => request<EmailDetail>(`/emails/${id}`),
     sync: async (options: SyncOptions = {}) => {
       const {
-        maxResults = 20,
+        maxResults = 50,
         method = "POST",
         includeCategories,
         excludeCategories,
@@ -191,7 +216,7 @@ export const api = {
         preserveImportantUnread = true,
         keepUnread = true,
       } = options;
-      const queryPayload = {
+      const queryPayloadSnake = {
         max_results: maxResults,
         include_categories: includeCategories?.join(","),
         exclude_categories: excludeCategories?.join(","),
@@ -199,7 +224,7 @@ export const api = {
         preserve_important_unread: preserveImportantUnread,
         keep_unread: keepUnread,
       };
-      const bodyPayload = {
+      const bodyPayloadSnake = {
         max_results: maxResults,
         include_categories: includeCategories,
         exclude_categories: excludeCategories,
@@ -207,19 +232,57 @@ export const api = {
         preserve_important_unread: preserveImportantUnread,
         keep_unread: keepUnread,
       };
+      const bodyPayloadCamel = {
+        maxResults,
+        includeCategories,
+        excludeCategories,
+        markAsRead,
+        preserveImportantUnread,
+        keepUnread,
+      };
+      const bodyPayloadCsv = {
+        max_results: maxResults,
+        include_categories: includeCategories?.join(","),
+        exclude_categories: excludeCategories?.join(","),
+        mark_as_read: markAsRead,
+        preserve_important_unread: preserveImportantUnread,
+        keep_unread: keepUnread,
+      };
+      const queryPayloadCamel = {
+        maxResults,
+        includeCategories: includeCategories?.join(","),
+        excludeCategories: excludeCategories?.join(","),
+        markAsRead,
+        preserveImportantUnread,
+        keepUnread,
+      };
 
-      if (method === "GET") {
-        return request<SyncResult>(`/emails/sync${buildQuery(queryPayload)}`, { method: "GET" });
+      const attempts: Array<() => Promise<SyncResult>> =
+        method === "GET"
+          ? [
+              () => request<SyncResult>(`/emails/sync${buildQuery(queryPayloadSnake)}`, { method: "GET", timeoutMs: 12_000 }),
+              () => request<SyncResult>(`/emails/sync${buildQuery(queryPayloadCamel)}`, { method: "GET", timeoutMs: 12_000 }),
+              () => request<SyncResult>("/emails/sync", { method: "POST", body: JSON.stringify(bodyPayloadSnake), timeoutMs: 12_000 }),
+            ]
+          : [
+              () => request<SyncResult>("/emails/sync", { method: "POST", body: JSON.stringify(bodyPayloadSnake), timeoutMs: 12_000 }),
+              () => request<SyncResult>("/emails/sync", { method: "POST", body: JSON.stringify(bodyPayloadCamel), timeoutMs: 12_000 }),
+              () => request<SyncResult>("/emails/sync", { method: "POST", body: JSON.stringify(bodyPayloadCsv), timeoutMs: 12_000 }),
+              () => request<SyncResult>(`/emails/sync${buildQuery(queryPayloadSnake)}`, { method: "POST", timeoutMs: 12_000 }),
+              () => request<SyncResult>(`/emails/sync${buildQuery(queryPayloadSnake)}`, { method: "GET", timeoutMs: 12_000 }),
+              () => request<SyncResult>(`/emails/sync${buildQuery(queryPayloadCamel)}`, { method: "GET", timeoutMs: 12_000 }),
+            ];
+
+      let lastError: unknown;
+      for (const attempt of attempts) {
+        try {
+          return await attempt();
+        } catch (error) {
+          lastError = error;
+        }
       }
 
-      try {
-        return await request<SyncResult>("/emails/sync", {
-          method: "POST",
-          body: JSON.stringify(bodyPayload),
-        });
-      } catch {
-        return request<SyncResult>(`/emails/sync${buildQuery(queryPayload)}`, { method: "POST" });
-      }
+      throw lastError instanceof Error ? lastError : new Error("Failed to sync emails");
     },
     process: (data: ManualEmailInput) =>
       request<ProcessResult>("/emails/process", {

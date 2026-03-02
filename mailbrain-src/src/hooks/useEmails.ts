@@ -51,7 +51,7 @@ export function useSyncEmails() {
     }
   >({
     mutationFn: ({
-      maxResults = 20,
+      maxResults = 50,
       method = "POST",
       includeCategories = [...DEFAULT_INCLUDE_CATEGORIES],
       excludeCategories = [...DEFAULT_EXCLUDE_CATEGORIES],
@@ -71,18 +71,24 @@ export function useSyncEmails() {
   });
 }
 
-export function useAutoSync(enabled: boolean, intervalMs: number, maxResults = 20) {
+export function useAutoSync(enabled: boolean, intervalMs: number, maxResults = 50) {
   const sync = useSyncEmails();
 
   useEffect(() => {
     if (!enabled || intervalMs < 1000) return;
+
+    // Trigger a sync immediately on enable, then continue on the selected interval.
+    if (!sync.isPending) {
+      sync.mutate({ maxResults, method: "POST" });
+    }
+
     const timer = setInterval(() => {
-      if (!sync.isPending) {
-        sync.mutate({ maxResults, method: "POST" });
-      }
+      if (sync.isPending) return;
+      sync.mutate({ maxResults, method: "POST" });
     }, intervalMs);
+
     return () => clearInterval(timer);
-  }, [enabled, intervalMs, maxResults, sync]);
+  }, [enabled, intervalMs, maxResults, sync.isPending, sync.mutate]);
 
   return sync;
 }
