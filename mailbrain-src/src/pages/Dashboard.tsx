@@ -5,6 +5,7 @@ import { useDashboardState } from "@/hooks/useDashboardState";
 import { useDeleteEmail, useEmailDetail, useEmails, useGenerateReply, useSendEmail } from "@/hooks/useEmails";
 import { useOverviewStats } from "@/hooks/useAnalytics";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,7 @@ const Dashboard = () => {
   const [genBody, setGenBody] = useState("");
   const [draft, setDraft] = useState("");
   const [emailPage, setEmailPage] = useState(1);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const emailsQuery = useEmails({
     page: emailPage,
@@ -82,6 +84,11 @@ const Dashboard = () => {
 
   const pageEmails = emailsQuery.data?.emails || [];
   const blockReply = shouldBlockAutoReply(selectedEmailQuery.data);
+  const handleCloseDetail = () => {
+    setDetailOpen(false);
+    setSelectedEmailId(undefined);
+    setDraft("");
+  };
 
   return (
     <div className="space-y-6">
@@ -94,8 +101,8 @@ const Dashboard = () => {
         ))}
       </section>
 
-      <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-1 rounded-xl border border-border bg-card p-4">
+      <section className="grid grid-cols-1 gap-6">
+        <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold">Inbox List</h2>
             <Badge variant="outline">{pageEmails.length}</Badge>
@@ -104,7 +111,10 @@ const Dashboard = () => {
             {pageEmails.map((email) => (
               <button
                 key={email.id}
-                onClick={() => setSelectedEmailId(email.id)}
+                onClick={() => {
+                  setSelectedEmailId(email.id);
+                  setDetailOpen(true);
+                }}
                 className={`w-full rounded-lg border p-3 text-left transition ${selectedEmailId === email.id ? "border-primary bg-primary/5" : "border-border hover:bg-secondary"}`}
               >
                 <div className="text-xs text-muted-foreground truncate">{email.sender}</div>
@@ -125,144 +135,162 @@ const Dashboard = () => {
             </Button>
           </div>
         </div>
+      </section>
 
-        <div className="xl:col-span-2 space-y-6">
-          <div className="rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold">Email Detail + Reply Box</h2>
-              <Button size="sm" variant="outline" onClick={() => processSelected.mutate()} disabled={processSelected.isPending || !selectedEmailId}>
-                Analyze With AI
-              </Button>
-            </div>
-            {selectedEmailQuery.data ? (
-              <div className="space-y-3">
-                <div>
-                  <div className="text-xs text-muted-foreground">Subject</div>
-                  <div className="text-sm font-medium">{selectedEmailQuery.data.subject}</div>
-                </div>
-                <div className="text-xs text-muted-foreground">Date: {getEmailDate(selectedEmailQuery.data)?.toLocaleString() || "No date"}</div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Body</div>
-                  <div className="text-sm whitespace-pre-wrap max-h-40 overflow-auto">{selectedEmailQuery.data.body || "No body"}</div>
-                </div>
-                {blockReply && (
-                  <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                    Reply is blocked for likely newsletter/automated emails.
-                  </div>
-                )}
-                <Textarea value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="AI generated draft appears here" className="min-h-[140px]" />
-                <div className="flex gap-2">
-                  <Button
-                    onClick={async () => {
-                      if (!selectedEmailId) return;
-                      try {
-                        await api.emails.reply(selectedEmailId, draft);
-                        toast.success("Reply sent");
-                      } catch (error) {
-                        const message = error instanceof Error ? error.message : "Reply failed";
-                        toast.error(message);
-                      }
-                    }}
-                    disabled={!selectedEmailId || !draft.trim() || blockReply}
-                  >
-                    Send Reply
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={async () => {
-                      if (!selectedEmailId) return;
-                      try {
-                        await api.emails.approve(selectedEmailId);
-                        toast.success("Approved and sent");
-                      } catch (error) {
-                        const message = error instanceof Error ? error.message : "Approval failed";
-                        toast.error(message);
-                      }
-                    }}
-                    disabled={!selectedEmailId || blockReply}
-                  >
-                    Approve + Send
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={async () => {
-                      if (!selectedEmailId) return;
-                      const confirmed = window.confirm("Delete this email permanently?");
-                      if (!confirmed) return;
-                      try {
-                        await deleteEmail.mutateAsync(selectedEmailId);
-                        setSelectedEmailId("");
-                        setDraft("");
-                        toast.success("Email deleted");
-                      } catch (error) {
-                        const message = error instanceof Error ? error.message : "Delete failed";
-                        toast.error(message);
-                      }
-                    }}
-                    disabled={!selectedEmailId || deleteEmail.isPending}
-                  >
-                    Delete Email
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground">Select an email to review details.</div>
-            )}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <h2 className="text-sm font-semibold">AI Generation Tools</h2>
+          <Input placeholder="Subject" value={genSubject} onChange={(event) => setGenSubject(event.target.value)} />
+          <Textarea placeholder="Body context" value={genBody} onChange={(event) => setGenBody(event.target.value)} />
+          <div className="flex gap-2">
+            <Button
+              onClick={async () => {
+                try {
+                  const response = await generateReply.mutateAsync({ subject: genSubject, body: genBody });
+                  const nextDraft = response.reply || response.body || response.draft || "";
+                  setDraft(nextDraft);
+                  toast.success("Draft generated");
+                } catch (error) {
+                  const message = error instanceof Error ? error.message : "Generate failed";
+                  toast.error(message);
+                }
+              }}
+              disabled={generateReply.isPending}
+            >
+              Generate Reply
+            </Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  await sendEmail.mutateAsync({ to: selectedEmailQuery.data?.sender || "", subject: genSubject, body: draft || genBody });
+                  toast.success("Email sent");
+                } catch (error) {
+                  const message = error instanceof Error ? error.message : "Send failed";
+                  toast.error(message);
+                }
+              }}
+              disabled={sendEmail.isPending}
+            >
+              Send Email
+            </Button>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-              <h2 className="text-sm font-semibold">AI Generation Tools</h2>
-              <Input placeholder="Subject" value={genSubject} onChange={(event) => setGenSubject(event.target.value)} />
-              <Textarea placeholder="Body context" value={genBody} onChange={(event) => setGenBody(event.target.value)} />
-              <div className="flex gap-2">
+        <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+          <h2 className="text-sm font-semibold">Profile Prompt Settings</h2>
+          <div className="text-xs text-muted-foreground">Name: {profileQuery.data?.full_name || "-"}</div>
+          <div className="text-xs text-muted-foreground">Role: {profileQuery.data?.role_title || "-"}</div>
+          <div className="text-xs text-muted-foreground">Tone: {profileQuery.data?.writing_tone || "-"}</div>
+          <div className="text-xs text-muted-foreground">Language: {profileQuery.data?.default_language || "-"}</div>
+          <Button size="sm" variant="outline" onClick={() => (window.location.href = "/settings")}>
+            Edit Profile & Prompt
+          </Button>
+        </div>
+      </section>
+
+      <Dialog
+        open={detailOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseDetail();
+          } else {
+            setDetailOpen(true);
+          }
+        }}
+      >
+        <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Email Detail + Reply Box</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-muted-foreground">Detailed view of selected email</div>
+            <Button size="sm" variant="outline" onClick={() => processSelected.mutate()} disabled={processSelected.isPending || !selectedEmailId}>
+              Analyze With AI
+            </Button>
+          </div>
+          {selectedEmailQuery.isLoading && <div className="text-sm text-muted-foreground">Loading email...</div>}
+          {!selectedEmailQuery.isLoading && selectedEmailQuery.data ? (
+            <div className="space-y-3">
+              <div>
+                <div className="text-xs text-muted-foreground">Subject</div>
+                <div className="text-sm font-medium">{selectedEmailQuery.data.subject}</div>
+              </div>
+              <div className="text-xs text-muted-foreground">Date: {getEmailDate(selectedEmailQuery.data)?.toLocaleString() || "No date"}</div>
+              <div>
+                <div className="text-xs text-muted-foreground">Body</div>
+                <div className="text-sm whitespace-pre-wrap max-h-40 overflow-auto">{selectedEmailQuery.data.body || "No body"}</div>
+              </div>
+              {blockReply && (
+                <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  Reply is blocked for likely newsletter/automated emails.
+                </div>
+              )}
+              <Textarea value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="AI generated draft appears here" className="min-h-[140px]" />
+              <div className="flex flex-wrap gap-2">
                 <Button
                   onClick={async () => {
+                    if (!selectedEmailId) return;
                     try {
-                      const response = await generateReply.mutateAsync({ subject: genSubject, body: genBody });
-                      const nextDraft = response.reply || response.body || response.draft || "";
-                      setDraft(nextDraft);
-                      toast.success("Draft generated");
+                      await api.emails.reply(selectedEmailId, draft);
+                      toast.success("Reply sent");
+                      handleCloseDetail();
                     } catch (error) {
-                      const message = error instanceof Error ? error.message : "Generate failed";
+                      const message = error instanceof Error ? error.message : "Reply failed";
                       toast.error(message);
                     }
                   }}
-                  disabled={generateReply.isPending}
+                  disabled={!selectedEmailId || !draft.trim() || blockReply}
                 >
-                  Generate Reply
+                  Send Reply
                 </Button>
                 <Button
                   variant="outline"
                   onClick={async () => {
+                    if (!selectedEmailId) return;
                     try {
-                      await sendEmail.mutateAsync({ to: selectedEmailQuery.data?.sender || "", subject: genSubject, body: draft || genBody });
-                      toast.success("Email sent");
+                      await api.emails.approve(selectedEmailId);
+                      toast.success("Approved and sent");
+                      handleCloseDetail();
                     } catch (error) {
-                      const message = error instanceof Error ? error.message : "Send failed";
+                      const message = error instanceof Error ? error.message : "Approval failed";
                       toast.error(message);
                     }
                   }}
-                  disabled={sendEmail.isPending}
+                  disabled={!selectedEmailId || blockReply}
                 >
-                  Send Email
+                  Approve + Send
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={async () => {
+                    if (!selectedEmailId) return;
+                    const confirmed = window.confirm("Delete this email permanently?");
+                    if (!confirmed) return;
+                    try {
+                      await deleteEmail.mutateAsync(selectedEmailId);
+                      toast.success("Email deleted");
+                      handleCloseDetail();
+                    } catch (error) {
+                      const message = error instanceof Error ? error.message : "Delete failed";
+                      toast.error(message);
+                    }
+                  }}
+                  disabled={!selectedEmailId || deleteEmail.isPending}
+                >
+                  Delete Email
+                </Button>
+                <Button variant="ghost" onClick={handleCloseDetail}>
+                  Close
                 </Button>
               </div>
             </div>
-
-            <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-              <h2 className="text-sm font-semibold">Profile Prompt Settings</h2>
-              <div className="text-xs text-muted-foreground">Name: {profileQuery.data?.full_name || "-"}</div>
-              <div className="text-xs text-muted-foreground">Role: {profileQuery.data?.role_title || "-"}</div>
-              <div className="text-xs text-muted-foreground">Tone: {profileQuery.data?.writing_tone || "-"}</div>
-              <div className="text-xs text-muted-foreground">Language: {profileQuery.data?.default_language || "-"}</div>
-              <Button size="sm" variant="outline" onClick={() => (window.location.href = "/settings")}>
-                Edit Profile & Prompt
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+          ) : null}
+          {!selectedEmailQuery.isLoading && !selectedEmailQuery.data && (
+            <div className="text-sm text-muted-foreground">Select an email to review details.</div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

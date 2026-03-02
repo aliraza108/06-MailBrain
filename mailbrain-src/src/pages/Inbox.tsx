@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useDashboardState } from "@/hooks/useDashboardState";
@@ -30,6 +31,7 @@ const Inbox = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [replyBody, setReplyBody] = useState("");
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const emailsQuery = useEmails({
     page,
@@ -62,6 +64,11 @@ const Inbox = () => {
 
   const blockReply = shouldBlockAutoReply(detailQuery.data);
   const importantConversation = isImportantConversation(detailQuery.data);
+  const handleCloseDetail = () => {
+    setDetailOpen(false);
+    setSelectedEmailId(undefined);
+    setReplyBody("");
+  };
 
   return (
     <div className="space-y-6">
@@ -83,14 +90,17 @@ const Inbox = () => {
         </select>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-1 rounded-xl border border-border bg-card p-4">
+      <div className="grid grid-cols-1 gap-6">
+        <div className="rounded-xl border border-border bg-card p-4">
           <h2 className="text-sm font-semibold mb-3">Inbox</h2>
           <div className="space-y-2 max-h-[620px] overflow-auto pr-1">
             {filteredEmails.map((email) => (
               <button
                 key={email.id}
-                onClick={() => setSelectedEmailId(email.id)}
+                onClick={() => {
+                  setSelectedEmailId(email.id);
+                  setDetailOpen(true);
+                }}
                 className={`w-full rounded-lg border p-3 text-left ${selectedEmailId === email.id ? "border-primary bg-primary/5" : "border-border hover:bg-secondary"}`}
               >
                 <div className="text-xs text-muted-foreground truncate">{email.sender}</div>
@@ -109,11 +119,25 @@ const Inbox = () => {
             <Button size="sm" variant="outline" onClick={() => setPage((p) => p + 1)} disabled={(emailsQuery.data?.emails?.length || 0) < PAGE_SIZE}>Next</Button>
           </div>
         </div>
+      </div>
 
-        <div className="xl:col-span-2 rounded-xl border border-border bg-card p-4 space-y-3">
-          <h2 className="text-sm font-semibold">Email Detail + Reply</h2>
-          {detailQuery.data ? (
-            <>
+      <Dialog
+        open={detailOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseDetail();
+          } else {
+            setDetailOpen(true);
+          }
+        }}
+      >
+        <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Email Detail + Reply</DialogTitle>
+          </DialogHeader>
+          {detailQuery.isLoading && <div className="text-sm text-muted-foreground">Loading email...</div>}
+          {!detailQuery.isLoading && detailQuery.data ? (
+            <div className="space-y-4">
               <div className="text-xs text-muted-foreground">From: {detailQuery.data.sender}</div>
               <div className="text-xs text-muted-foreground">
                 Date: {getEmailDate(detailQuery.data)?.toLocaleString() || "No date"}
@@ -140,6 +164,7 @@ const Inbox = () => {
                     try {
                       await sendReplyMutation.mutateAsync({ id: detailQuery.data.id, body: replyBody });
                       toast.success("Reply sent successfully");
+                      handleCloseDetail();
                     } catch (error) {
                       const message = error instanceof Error ? error.message : "Reply send failed";
                       toast.error(message);
@@ -156,6 +181,7 @@ const Inbox = () => {
                     try {
                       await approveMutation.mutateAsync(detailQuery.data.id);
                       toast.success("Approved and sent");
+                      handleCloseDetail();
                     } catch (error) {
                       const message = error instanceof Error ? error.message : "Approval failed";
                       toast.error(message);
@@ -173,9 +199,8 @@ const Inbox = () => {
                     if (!confirmed) return;
                     try {
                       await deleteEmailMutation.mutateAsync(detailQuery.data.id);
-                      setSelectedEmailId("");
-                      setReplyBody("");
                       toast.success("Email deleted");
+                      handleCloseDetail();
                     } catch (error) {
                       const message = error instanceof Error ? error.message : "Delete failed";
                       toast.error(message);
@@ -185,13 +210,17 @@ const Inbox = () => {
                 >
                   Delete Email
                 </Button>
+                <Button variant="ghost" onClick={handleCloseDetail}>
+                  Close
+                </Button>
               </div>
-            </>
-          ) : (
+            </div>
+          ) : null}
+          {!detailQuery.isLoading && !detailQuery.data && (
             <div className="text-sm text-muted-foreground">Select an email from the list.</div>
           )}
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
