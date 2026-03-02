@@ -28,6 +28,26 @@ const UNIT_TO_MS: Record<SyncUnit, number> = {
   day: 24 * 60 * 60 * 1000,
 };
 
+function toSyncCount(result: Record<string, unknown>): number {
+  const candidates = [
+    result.synced,
+    result.new_emails,
+    result.total,
+    result.added,
+    result.processed,
+    result.fetched,
+  ];
+  for (const value of candidates) {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+  }
+  return 0;
+}
+
+function toSyncMessage(result: Record<string, unknown>): string {
+  const raw = result.message ?? result.detail ?? result.status ?? "";
+  return typeof raw === "string" ? raw : "";
+}
+
 const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -52,7 +72,14 @@ const Header = () => {
         includeCategories: [...DEFAULT_INCLUDE_CATEGORIES],
         excludeCategories: [...DEFAULT_EXCLUDE_CATEGORIES],
       });
-      const count = result.synced ?? result.new_emails ?? result.total ?? result.added ?? 0;
+      const count = toSyncCount(result as Record<string, unknown>);
+      const message = toSyncMessage(result as Record<string, unknown>);
+
+      if (count <= 0) {
+        toast.error(message || "Sync failed: 0 emails found/updated");
+        return;
+      }
+
       toast.success(`Sync complete: ${count} email(s) updated`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to sync";
