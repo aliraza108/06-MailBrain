@@ -13,6 +13,7 @@ import { toast } from "@/components/ui/sonner";
 import { shouldBlockAutoReply } from "@/lib/emailClassifier";
 
 const PAGE_SIZE = 10;
+const SIMPLE_EMAIL_REGEX = /[^\s@]+@[^\s@]+\.[^\s@]+/;
 
 function getEmailDate(email: { received_at?: string; processed_at?: string }) {
   const raw = email.received_at || email.processed_at;
@@ -163,14 +164,36 @@ const Dashboard = () => {
               variant="outline"
               onClick={async () => {
                 try {
-                  await sendEmail.mutateAsync({ to: selectedEmailQuery.data?.sender || "", subject: genSubject, body: draft || genBody });
+                  const to = selectedEmailQuery.data?.sender || "";
+                  const subject = genSubject.trim();
+                  const body = (draft || genBody).trim();
+
+                  if (!to.trim()) {
+                    throw new Error("Select an email first to determine recipient");
+                  }
+                  if (!SIMPLE_EMAIL_REGEX.test(to)) {
+                    throw new Error("Selected sender does not contain a valid email address");
+                  }
+                  if (!subject) {
+                    throw new Error("Subject is required");
+                  }
+                  if (!body) {
+                    throw new Error("Body is required");
+                  }
+
+                  await sendEmail.mutateAsync({ to, subject, body });
                   toast.success("Email sent");
                 } catch (error) {
                   const message = error instanceof Error ? error.message : "Send failed";
                   toast.error(message);
                 }
               }}
-              disabled={sendEmail.isPending}
+              disabled={
+                sendEmail.isPending ||
+                !selectedEmailQuery.data?.sender?.trim() ||
+                !genSubject.trim() ||
+                !(draft || genBody).trim()
+              }
             >
               Send Email
             </Button>

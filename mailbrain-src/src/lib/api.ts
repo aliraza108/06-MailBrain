@@ -120,6 +120,31 @@ function extractEmailAddress(value: string): string {
   return trimmed;
 }
 
+function isValidEmailAddress(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function normalizeSendPayload(payload: SendEmailPayload): SendEmailPayload {
+  const to = extractEmailAddress(payload.to).trim();
+  const subject = payload.subject.trim();
+  const body = payload.body.trim();
+
+  if (!to) {
+    throw new Error("Recipient email is required");
+  }
+  if (!isValidEmailAddress(to)) {
+    throw new Error(`Invalid recipient email: ${to}`);
+  }
+  if (!subject) {
+    throw new Error("Email subject is required");
+  }
+  if (!body) {
+    throw new Error("Email body is required");
+  }
+
+  return { to, subject, body };
+}
+
 function shouldTryAlternateSendVariant(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
   const message = error.message.toLowerCase();
@@ -127,7 +152,10 @@ function shouldTryAlternateSendVariant(error: unknown): boolean {
     message.includes("422") ||
     message.includes("validation") ||
     message.includes("body") ||
-    message.includes("field required")
+    message.includes("field required") ||
+    message.includes("subject") ||
+    message.includes("recipient") ||
+    message.includes("to")
   );
 }
 
@@ -317,19 +345,41 @@ export const api = {
       }
     },
     send: async (payload: SendEmailPayload) => {
-      const normalizedPayload = { ...payload, to: extractEmailAddress(payload.to) };
-      try {
-        return await request("/emails/send", { method: "POST", body: JSON.stringify(normalizedPayload) });
-      } catch (error) {
-        if (!shouldTryAlternateSendVariant(error)) throw error;
-        return request("/emails/send", {
-          method: "POST",
-          body: JSON.stringify({
-            ...normalizedPayload,
-            text: normalizedPayload.body,
+      const normalizedPayload = normalizeSendPayload(payload);
+      const attempts: Array<() => Promise<unknown>> = [
+        () => request("/emails/send", { method: "POST", body: JSON.stringify(normalizedPayload) }),
+        () =>
+          request("/emails/send", {
+            method: "POST",
+            body: JSON.stringify({ ...normalizedPayload, text: normalizedPayload.body }),
           }),
-        });
+        () =>
+          request("/emails/send", {
+            method: "POST",
+            body: JSON.stringify({ ...normalizedPayload, content: normalizedPayload.body }),
+          }),
+        () =>
+          request("/emails/send", {
+            method: "POST",
+            body: JSON.stringify({
+              recipient: normalizedPayload.to,
+              subject: normalizedPayload.subject,
+              body: normalizedPayload.body,
+            }),
+          }),
+      ];
+
+      let lastError: unknown;
+      for (const attempt of attempts) {
+        try {
+          return await attempt();
+        } catch (error) {
+          if (!shouldTryAlternateSendVariant(error)) throw error;
+          lastError = error;
+        }
       }
+
+      throw lastError instanceof Error ? lastError : new Error("Failed to send email");
     },
     generateReply: (payload: GenerateReplyPayload) => request<AiDraftResponse>("/emails/generate-reply", { method: "POST", body: JSON.stringify(payload) }),
     generate: (payload: SendEmailPayload) => request<AiDraftResponse>("/emails/generate", { method: "POST", body: JSON.stringify(payload) }),
@@ -358,29 +408,51 @@ export const api = {
       }),
     generateFollowUp: (payload: SendEmailPayload) => request<AiDraftResponse>("/emails/generate/follow-up", { method: "POST", body: JSON.stringify(payload) }),
     generateAndSend: (payload: SendEmailPayload) => request("/emails/generate-and-send", { method: "POST", body: JSON.stringify(payload) }),
-    jobApplySend: (payload: SendEmailPayload | JobApplyPayload) =>
-      request("/emails/job-apply/send", {
-        method: "POST",
-        body: JSON.stringify({
-          ...payload,
-          job_post_body: (payload as JobApplyPayload).job_post_body || payload.body,
-        }),
-      }),
-    proposalSend: (payload: SendEmailPayload | ProposalPayload) =>
-      request("/emails/proposal/send", {
-        method: "POST",
-        body: JSON.stringify({
-          ...payload,
-          proposal_body:
-            (payload as ProposalPayload).proposal_body ||
-            (payload as ProposalPayload).proposal_post_body ||
-            payload.body,
-          proposal_post_body:
-            (payload as ProposalPayload).proposal_post_body ||
-            (payload as ProposalPayload).proposal_body ||
-            payload.body,
-        }),
-      }),
+    jobApplySend: async (payload: SendEmailPayload | JobApplyPayload) => {
+      const normalized = normalizeSendPayload(payload);
+      const jobPayload = payload as JobApplyPayload;
+      const mergedPayload = {
+        ...payload,
+        ...normalized,
+        job_post_body: jobPayload.job_post_body || normalized.body,
+      };
+
+      try {
+        return await request("/emails/job-apply/send", { method: "POST", body: JSON.stringify(mergedPayload) });
+      } catch (error) {
+        if (!shouldTryAlternateSendVariant(error)) throw error;
+        return request("/emails/job-apply/send", {
+          method: "POST",
+          body: JSON.stringify({ ...mergedPayload, text: normalized.body }),
+        });
+      }
+    },
+    proposalSend: async (payload: SendEmailPayload | ProposalPayload) => {
+      const normalized = normalizeSendPayload(payload);
+      const proposalPayload = payload as ProposalPayload;
+      const mergedPayload = {
+        ...payload,
+        ...normalized,
+        proposal_body:
+          proposalPayload.proposal_body ||
+          proposalPayload.proposal_post_body ||
+          normalized.body,
+        proposal_post_body:
+          proposalPayload.proposal_post_body ||
+          proposalPayload.proposal_body ||
+          normalized.body,
+      };
+
+      try {
+        return await request("/emails/proposal/send", { method: "POST", body: JSON.stringify(mergedPayload) });
+      } catch (error) {
+        if (!shouldTryAlternateSendVariant(error)) throw error;
+        return request("/emails/proposal/send", {
+          method: "POST",
+          body: JSON.stringify({ ...mergedPayload, text: normalized.body }),
+        });
+      }
+    },
     generateSubjects: (payload: GenerateSubjectsPayload) => request<AiDraftResponse>("/emails/generate/subjects", { method: "POST", body: JSON.stringify(payload) }),
     improveDraft: (payload: ImproveDraftPayload) => request<AiDraftResponse>("/emails/generate/improve", { method: "POST", body: JSON.stringify(payload) }),
     delete: (id: string) => request(`/emails/${id}`, { method: "DELETE" }),
