@@ -120,6 +120,11 @@ const Dashboard = () => {
               >
                 <div className="text-xs text-muted-foreground truncate">{email.sender}</div>
                 <div className="font-medium text-sm truncate">{email.subject}</div>
+                {email.generated_reply ? (
+                  <div className="text-xs text-muted-foreground truncate">AI Reply: {email.generated_reply}</div>
+                ) : (
+                  <div className="text-xs text-muted-foreground">AI Reply: (not generated)</div>
+                )}
                 <div className="text-xs text-muted-foreground">{getEmailDate(email)?.toLocaleString() || "No date"}</div>
                 <div className="text-xs text-muted-foreground truncate">{email.intent || "unknown"}</div>
               </button>
@@ -249,6 +254,10 @@ const Dashboard = () => {
                   Reply is blocked for likely newsletter/automated emails.
                 </div>
               )}
+              <div className="rounded-md border border-border bg-secondary px-3 py-2 text-xs text-muted-foreground">
+                AI Reply:
+                <div className="mt-1 whitespace-pre-wrap text-sm text-foreground">{draft || "(not generated)"}</div>
+              </div>
               <Textarea value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="AI generated draft appears here" className="min-h-[140px]" />
               <div className="flex flex-wrap gap-2">
                 <Button

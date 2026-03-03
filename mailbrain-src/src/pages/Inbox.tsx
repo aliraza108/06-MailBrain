@@ -105,6 +105,11 @@ const Inbox = () => {
               >
                 <div className="text-xs text-muted-foreground truncate">{email.sender}</div>
                 <div className="text-sm font-medium truncate">{email.subject}</div>
+                {email.generated_reply ? (
+                  <div className="text-xs text-muted-foreground truncate">AI Reply: {email.generated_reply}</div>
+                ) : (
+                  <div className="text-xs text-muted-foreground">AI Reply: (not generated)</div>
+                )}
                 <div className="text-xs text-muted-foreground">
                   {getEmailDate(email)?.toLocaleString() || "No date"}
                 </div>
@@ -182,6 +187,22 @@ const Inbox = () => {
                   disabled={generateReply.isPending}
                 >
                   Generate Reply (AI)
+                </Button>
+                <Button
+                  onClick={async () => {
+                    if (!detailQuery.data?.id) return;
+                    try {
+                      await sendReplyMutation.mutateAsync({ id: detailQuery.data.id, body: replyBody });
+                      toast.success("AI reply sent");
+                      handleCloseDetail();
+                    } catch (error) {
+                      const message = error instanceof Error ? error.message : "Reply send failed";
+                      toast.error(message);
+                    }
+                  }}
+                  disabled={sendReplyMutation.isPending || !replyBody.trim() || blockReply}
+                >
+                  Send AI Reply
                 </Button>
                 <Button
                   onClick={async () => {
