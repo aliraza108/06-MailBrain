@@ -76,7 +76,12 @@ const Header = () => {
       const message = toSyncMessage(result as Record<string, unknown>);
 
       if (count <= 0) {
-        toast.error(message || "Sync failed: 0 emails found/updated");
+        const lower = message.toLowerCase();
+        if (lower.includes("error") || lower.includes("fail") || lower.includes("unauthorized")) {
+          toast.error(message || "Sync failed");
+        } else {
+          toast.info(message || "Sync complete: no new emails found");
+        }
         return;
       }
 

@@ -272,7 +272,10 @@ const Dashboard = () => {
                   onClick={async () => {
                     if (!selectedEmailId) return;
                     try {
-                      await api.emails.approve(selectedEmailId);
+                      if (!draft.trim()) {
+                        throw new Error("Reply body is empty");
+                      }
+                      await api.emails.sendReply(selectedEmailId, draft);
                       toast.success("Approved and sent");
                       handleCloseDetail();
                     } catch (error) {
@@ -280,7 +283,7 @@ const Dashboard = () => {
                       toast.error(message);
                     }
                   }}
-                  disabled={!selectedEmailId || blockReply}
+                  disabled={!selectedEmailId || blockReply || !draft.trim()}
                 >
                   Approve + Send
                 </Button>

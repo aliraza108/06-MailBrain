@@ -14,7 +14,7 @@ interface AnalysisResultProps {
 
 const AnalysisResult = ({ email }: AnalysisResultProps) => {
   const [editing, setEditing] = useState(false);
-  const [replyBody, setReplyBody] = useState(email.generated_reply);
+  const [replyBody, setReplyBody] = useState(email.generated_reply || "");
   const [sending, setSending] = useState(false);
 
   const handleApprove = async () => {
@@ -22,9 +22,13 @@ const AnalysisResult = ({ email }: AnalysisResultProps) => {
       toast.error("Email is not ready to send");
       return;
     }
+    if (!replyBody.trim()) {
+      toast.error("Reply body is empty");
+      return;
+    }
     setSending(true);
     try {
-      await api.emails.approveReply(email.id);
+      await api.emails.sendReply(email.id, replyBody);
       toast.success("Reply sent successfully");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to send reply";

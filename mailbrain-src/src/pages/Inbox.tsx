@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useDashboardState } from "@/hooks/useDashboardState";
-import { useApproveReply, useDeleteEmail, useEmailDetail, useEmails, useSendReply } from "@/hooks/useEmails";
+import { useDeleteEmail, useEmailDetail, useEmails, useGenerateReply, useSendReply } from "@/hooks/useEmails";
 import { toast } from "@/components/ui/sonner";
 import { isImportantConversation, shouldBlockAutoReply } from "@/lib/emailClassifier";
 
@@ -40,7 +40,7 @@ const Inbox = () => {
     priority: priorityFilter,
   });
   const detailQuery = useEmailDetail(selectedEmailId, Boolean(selectedEmailId));
-  const approveMutation = useApproveReply();
+  const generateReply = useGenerateReply();
   const sendReplyMutation = useSendReply();
   const deleteEmailMutation = useDeleteEmail();
 
@@ -159,6 +159,31 @@ const Inbox = () => {
               <Textarea value={replyBody} onChange={(e) => setReplyBody(e.target.value)} className="min-h-[180px]" />
               <div className="flex flex-wrap gap-2">
                 <Button
+                  variant="secondary"
+                  onClick={async () => {
+                    if (!detailQuery.data?.subject || !detailQuery.data?.body) {
+                      toast.error("Select an email with subject and body first");
+                      return;
+                    }
+                    try {
+                      const response = await generateReply.mutateAsync({
+                        subject: detailQuery.data.subject,
+                        body: detailQuery.data.body,
+                        conversation_id: detailQuery.data.conversation_id,
+                      });
+                      const nextDraft = response.reply || response.body || response.draft || "";
+                      setReplyBody(nextDraft);
+                      toast.success("AI reply generated");
+                    } catch (error) {
+                      const message = error instanceof Error ? error.message : "Generate failed";
+                      toast.error(message);
+                    }
+                  }}
+                  disabled={generateReply.isPending}
+                >
+                  Generate Reply (AI)
+                </Button>
+                <Button
                   onClick={async () => {
                     if (!detailQuery.data?.id) return;
                     try {
@@ -179,7 +204,7 @@ const Inbox = () => {
                   onClick={async () => {
                     if (!detailQuery.data?.id) return;
                     try {
-                      await approveMutation.mutateAsync(detailQuery.data.id);
+                      await sendReplyMutation.mutateAsync({ id: detailQuery.data.id, body: replyBody });
                       toast.success("Approved and sent");
                       handleCloseDetail();
                     } catch (error) {
@@ -187,7 +212,7 @@ const Inbox = () => {
                       toast.error(message);
                     }
                   }}
-                  disabled={approveMutation.isPending || blockReply}
+                  disabled={sendReplyMutation.isPending || !replyBody.trim() || blockReply}
                 >
                   Approve + Send
                 </Button>

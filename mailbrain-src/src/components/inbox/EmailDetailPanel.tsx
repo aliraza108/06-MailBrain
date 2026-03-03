@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { useEmailDetail } from "@/hooks/useEmails";
+import { useEmailDetail, useGenerateReply } from "@/hooks/useEmails";
 import PriorityBadge from "@/components/ui/PriorityBadge";
 import IntentTag from "@/components/ui/IntentTag";
 import ConfidenceBar from "@/components/ui/ConfidenceBar";
@@ -22,6 +22,7 @@ const EmailDetailPanel = ({ emailId, open, onOpenChange }: EmailDetailPanelProps
   const [editing, setEditing] = useState(false);
   const [replyBody, setReplyBody] = useState("");
   const [sending, setSending] = useState(false);
+  const generateReply = useGenerateReply();
 
   useEffect(() => {
     if (data?.generated_reply) {
@@ -46,7 +47,7 @@ const EmailDetailPanel = ({ emailId, open, onOpenChange }: EmailDetailPanelProps
     if (!emailId) return;
     setSending(true);
     try {
-      await api.emails.approveReply(emailId);
+      await api.emails.sendReply(emailId, replyBody);
       toast.success("Reply sent successfully");
       onOpenChange(false);
     } catch (error) {
@@ -149,6 +150,32 @@ const EmailDetailPanel = ({ emailId, open, onOpenChange }: EmailDetailPanelProps
                     <Button
                       variant="secondary"
                       className="bg-card border border-border"
+                      onClick={async () => {
+                        if (!data.subject || !data.body) {
+                          toast.error("Email subject and body are required for AI generation");
+                          return;
+                        }
+                        try {
+                          const response = await generateReply.mutateAsync({
+                            subject: data.subject,
+                            body: data.body,
+                            conversation_id: data.conversation_id,
+                          });
+                          const nextDraft = response.reply || response.body || response.draft || "";
+                          setReplyBody(nextDraft);
+                          toast.success("AI reply generated");
+                        } catch (error) {
+                          const message = error instanceof Error ? error.message : "Generate failed";
+                          toast.error(message);
+                        }
+                      }}
+                      disabled={generateReply.isPending}
+                    >
+                      Generate Reply (AI)
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      className="bg-card border border-border"
                       onClick={() => setEditing((prev) => !prev)}
                     >
                       {editing ? "Cancel Edit" : "Edit Reply"}
@@ -157,7 +184,7 @@ const EmailDetailPanel = ({ emailId, open, onOpenChange }: EmailDetailPanelProps
                       <Button
                         className="bg-primary hover:bg-primary/90 text-primary-foreground"
                         onClick={handleSendEdited}
-                        disabled={sending}
+                        disabled={sending || !replyBody.trim()}
                       >
                         Approve & Send
                       </Button>
@@ -165,7 +192,7 @@ const EmailDetailPanel = ({ emailId, open, onOpenChange }: EmailDetailPanelProps
                       <Button
                         className="bg-primary hover:bg-primary/90 text-primary-foreground"
                         onClick={handleApprove}
-                        disabled={sending}
+                        disabled={sending || !replyBody.trim()}
                       >
                         Approve & Send
                       </Button>
